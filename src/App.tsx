@@ -15,11 +15,23 @@ import { UploadMaterialModal } from './components/UploadMaterialModal';
 import { DocumentReaderModal } from './components/DocumentReaderModal';
 import { JoinClassroomModal } from './components/JoinClassroomModal';
 import { AuthModal } from './components/AuthModal';
+import { ChatView } from './components/chat/ChatView';
 import confetti from 'canvas-confetti';
 
 export default function App() {
-  // App navigation state: 'landing' | 'dashboard' | 'subject-detail' | 'create-classroom' | 'subjects' | 'notes' | 'exams' | 'members' | 'profile'
+  // App navigation state: 'landing' | 'dashboard' | 'subject-detail' | 'create-classroom' | 'subjects' | 'notes' | 'exams' | 'members' | 'profile' | 'chat'
   const [currentView, setCurrentView] = useState<string>('landing');
+  const [initialChatTargetUserId, setInitialChatTargetUserId] = useState<string | null>(null);
+  const [materialToForward, setMaterialToForward] = useState<Material | null>(null);
+
+  // Universal Navigation History Stack to enable Back Button across all views and features
+  const [navHistory, setNavHistory] = useState<Array<{ view: string; subject?: Subject | null }>>([]);
+
+  const handleForwardMaterialFromNotes = (material: Material) => {
+    setNavHistory((prev) => [...prev, { view: currentView, subject: selectedSubject }]);
+    setMaterialToForward(material);
+    setCurrentView('chat');
+  };
   
   // Data states
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -166,10 +178,34 @@ export default function App() {
 
   // Handlers
   const handleNavigate = (view: string, data?: any) => {
+    if (view === currentView && (!data || data?.id === selectedSubject?.id)) return;
+    setNavHistory((prev) => [...prev, { view: currentView, subject: selectedSubject }]);
     if (view === 'subject-detail' && data) {
       setSelectedSubject(data);
     }
     setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    if (navHistory.length > 0) {
+      const nextHist = [...navHistory];
+      const prevEntry = nextHist.pop()!;
+      setNavHistory(nextHist);
+      if (prevEntry.subject) {
+        setSelectedSubject(prevEntry.subject);
+      }
+      setCurrentView(prevEntry.view);
+    } else {
+      // Fallback hierarchy if stack is empty
+      if (currentView === 'subject-detail') {
+        setCurrentView('notes');
+      } else if (currentView !== 'dashboard' && currentView !== 'landing') {
+        setCurrentView('dashboard');
+      } else if (currentView === 'dashboard') {
+        setCurrentView('landing');
+      }
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -357,7 +393,9 @@ export default function App() {
         announcements={announcements}
         classrooms={classrooms}
         onNavigate={handleNavigate}
-        onOpenCreateClassroom={() => setCurrentView('create-classroom')}
+        onBack={handleGoBack}
+        canGoBack={navHistory.length > 0 || currentView !== 'landing'}
+        onOpenCreateClassroom={() => handleNavigate('create-classroom')}
         onOpenJoinClassroom={() => setIsJoinOpen(true)}
         onSelectClassroom={(cls) => {
           setActiveClassroom(cls);
@@ -369,12 +407,12 @@ export default function App() {
       />
 
       {/* Main Views */}
-      <div className={currentView === 'landing' ? '' : 'pt-[68px]'}>
+      <div className={currentView === 'landing' ? 'w-full' : 'pt-[68px] w-full min-h-screen'}>
         {currentView === 'landing' && (
           <LandingPage
-            onOpenCreateClassroom={() => setCurrentView('create-classroom')}
+            onOpenCreateClassroom={() => handleNavigate('create-classroom')}
             onOpenJoinClassroom={() => setIsJoinOpen(true)}
-            onEnterDemo={() => setCurrentView('dashboard')}
+            onEnterDemo={() => handleNavigate('dashboard')}
             onOpenAuth={handleOpenAuth}
           />
         )}
@@ -393,8 +431,9 @@ export default function App() {
             }}
             announcements={announcements}
             nextExam={nextExam}
-            recentMaterials={materials.slice(0, 6)}
+            recentMaterials={materials.slice(0, 8)}
             onNavigate={handleNavigate}
+            onBack={handleGoBack}
             onOpenUpload={() => handleOpenUpload()}
             onPreviewMaterial={(mat) => setPreviewMaterial(mat)}
             onAddAnnouncement={handleAddAnnouncement}
@@ -408,13 +447,15 @@ export default function App() {
             onOpenUpload={(subId) => handleOpenUpload(subId)}
             onPreviewMaterial={(mat) => setPreviewMaterial(mat)}
             onDownloadMaterial={handleDownloadMaterial}
+            onForwardMaterial={handleForwardMaterialFromNotes}
+            onBack={handleGoBack}
           />
         )}
 
         {currentView === 'create-classroom' && (
           <CreateClassroomWizard
             onCreate={handleCreateClassroom}
-            onCancel={() => setCurrentView('landing')}
+            onCancel={handleGoBack}
           />
         )}
 
@@ -422,9 +463,9 @@ export default function App() {
           <SubjectsListView
             subjects={subjects}
             onSelectSubject={(subject) => {
-              setSelectedSubject(subject);
-              setCurrentView('subject-detail');
+              handleNavigate('subject-detail', subject);
             }}
+            onBack={handleGoBack}
             onOpenAddSubject={() => {
               const name = prompt('Enter new subject name (e.g. Cloud Computing):');
               if (name) {
@@ -451,6 +492,8 @@ export default function App() {
             onPreviewMaterial={(mat) => setPreviewMaterial(mat)}
             onDownloadMaterial={handleDownloadMaterial}
             onOpenUpload={() => handleOpenUpload()}
+            onForwardMaterial={handleForwardMaterialFromNotes}
+            onBack={handleGoBack}
           />
         )}
 
@@ -463,13 +506,13 @@ export default function App() {
             onPreviewMaterial={(mat) => setPreviewMaterial(mat)}
             onDownloadMaterial={handleDownloadMaterial}
             onOpenUpload={(examId, examType) => handleOpenUpload(examId, examType)}
+            onBack={handleGoBack}
             onNavigateToSubject={(code) => {
               const found = subjects.find((s) => s.code.toLowerCase() === code.toLowerCase());
               if (found) {
-                setSelectedSubject(found);
-                setCurrentView('subject-detail');
+                handleNavigate('subject-detail', found);
               } else {
-                setCurrentView('notes');
+                handleNavigate('notes');
               }
             }}
           />
@@ -480,6 +523,46 @@ export default function App() {
             members={members}
             classroom={activeClassroom}
             currentUserRole={currentUser?.role || 'student'}
+            onBack={handleGoBack}
+            onStartChat={(memberId) => {
+              setNavHistory((prev) => [...prev, { view: currentView, subject: selectedSubject }]);
+              setInitialChatTargetUserId(memberId);
+              setCurrentView('chat');
+            }}
+          />
+        )}
+
+        {currentView === 'chat' && activeClassroom && currentUser && (
+          <ChatView
+            currentUser={currentUser}
+            activeClassroomId={activeClassroom.id}
+            classMembers={members}
+            materials={materials}
+            onOpenDocumentReader={(mat) => setPreviewMaterial(mat)}
+            initialTargetUserId={initialChatTargetUserId}
+            onClearInitialTarget={() => setInitialChatTargetUserId(null)}
+            materialToForward={materialToForward}
+            onClearMaterialToForward={() => setMaterialToForward(null)}
+            onBack={handleGoBack}
+            onUpdateCurrentUser={(updated) => {
+              setCurrentUser((prev) => (prev ? { ...prev, ...updated } : null));
+              setMembers((prev) =>
+                prev.map((m) =>
+                  m.id === currentUser?.id
+                    ? {
+                        ...m,
+                        name: updated.name || m.name,
+                        avatar: updated.avatar || m.avatar,
+                      }
+                    : m
+                )
+              );
+            }}
+            onUpdateFriendName={(friendId, newName) => {
+              setMembers((prev) =>
+                prev.map((m) => (m.id === friendId ? { ...m, name: newName } : m))
+              );
+            }}
           />
         )}
 
@@ -491,6 +574,7 @@ export default function App() {
             onPreviewMaterial={(mat) => setPreviewMaterial(mat)}
             onOpenAuth={handleOpenAuth}
             onSignOut={handleSignOut}
+            onBack={handleGoBack}
           />
         )}
       </div>

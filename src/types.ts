@@ -95,6 +95,7 @@ export interface Exam {
   time: string;
   examType?: string; // e.g. "IAT 1", "IAT 2", "SEM"
   venue?: string;
+  syllabus?: string;
   progressPercent: number;
   isCompleted?: boolean;
 }
@@ -107,4 +108,89 @@ export interface Member {
   role: UserRole;
   rollNumber: string;
   joinedDate: string;
+}
+
+export type ChatRole = 'admin' | 'member';
+
+export type ChatMessageType = 'text' | 'file' | 'camera_image' | 'material_forward';
+
+export interface ForwardedMaterialInfo {
+  id: string;
+  title: string;
+  subjectCode: string;
+  subjectName: string;
+  type: MaterialType;
+  fileFormat: FileFormat;
+  fileSize: string;
+  snippet?: string;
+}
+
+export interface ChatMessageReaction {
+  emoji: string;
+  userId: string;
+  userName: string;
+}
+
+export interface ChatMessageReplyInfo {
+  id: string;
+  senderName: string;
+  content: string;
+  type?: ChatMessageType;
+}
+
+export interface ChatMessage {
+  id: string;
+  groupId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  type: ChatMessageType;
+  content: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: string;
+  forwardedMaterial?: ForwardedMaterialInfo;
+  timestamp: string;
+  createdAt: number;
+  deliveredTo: string[];
+  readBy: string[];
+  isDeleted?: boolean;
+  reactions?: ChatMessageReaction[];
+  replyTo?: ChatMessageReplyInfo;
+  isPinned?: boolean;
+  isStarred?: boolean;
+  starredBy?: string[];
+}
+
+export interface ChatGroupMember {
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: ChatRole;
+  rollNumber?: string;
+  isOnline: boolean;
+  lastSeen?: string;
+}
+
+export interface ChatGroup {
+  id: string;
+  classroomId: string;
+  name: string;
+  avatar: string;
+  description?: string;
+  isDirect: boolean;
+  createdBy: string;
+  adminIds: string[];
+  memberIds: string[];
+  createdAt: string;
+  pinnedMessageId?: string;
+  lastMessage?: {
+    text: string;
+    timestamp: string;
+    senderName: string;
+    senderId: string;
+    type?: ChatMessageType;
+  };
+  unreadCount?: number;
 }

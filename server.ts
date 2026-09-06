@@ -1,11 +1,27 @@
 import express from 'express';
+import http from 'http';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { WebSocketServer, WebSocket } from 'ws';
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (request, socket, head) => {
+  const host = request.headers.host || 'localhost:3000';
+  const urlObj = new URL(request.url || '', `http://${host}`);
+  if (urlObj.pathname === '/ws') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  }
+});
 
 // Initial Mock Database
 let classrooms = [
@@ -1147,6 +1163,9 @@ app.get('/api/materials', (req, res) => {
 app.post('/api/materials', (req, res) => {
   const {
     subjectId = 'sub-ds',
+    subjectName,
+    subjectCode,
+    professor,
     title,
     description = '',
     type = 'notes',
@@ -1158,7 +1177,36 @@ app.post('/api/materials', (req, res) => {
     recommendedExam = '',
   } = req.body;
 
-  const subject = subjects.find((s) => s.id === subjectId) || subjects[0];
+  let subject = subjects.find((s) => s.id === subjectId);
+
+  // If user typed a manual subject that doesn't exist yet, create it dynamically
+  if ((!subject || subjectId === 'custom') && (subjectName || subjectCode)) {
+    const sName = (subjectName || 'General Studies').trim();
+    const sCode = (subjectCode || 'GEN101').trim().toUpperCase();
+    const existing = subjects.find((s) => s.code.toLowerCase() === sCode.toLowerCase());
+    if (existing) {
+      subject = existing;
+    } else {
+      subject = {
+        id: `sub-${Date.now()}`,
+        classroomId: currentUser ? currentUser.classroomId : 'cls-1',
+        code: sCode,
+        name: sName,
+        professor: professor ? professor.trim() : 'Faculty Instructor',
+        description: `Course syllabus and student study repository for ${sName}.`,
+        creditHours: 3,
+        materialsCount: 0,
+        notesCount: 0,
+        pyqsCount: 0,
+      };
+      subjects.push(subject);
+    }
+  }
+
+  if (!subject) {
+    subject = subjects[0];
+  }
+
   const now = Date.now();
   const dateFormatted = new Date(now).toLocaleDateString('en-US', {
     month: 'short',
@@ -1277,6 +1325,1316 @@ app.get('/api/members', (req, res) => {
   res.json(members);
 });
 
+// ==========================================
+// WHATSAPP-STYLE CHAT SYSTEM (Groups, DMs, Messages, Real-Time WS)
+// ==========================================
+
+interface GroupMemberRecord {
+  groupId: string;
+  userId: string;
+  role: 'admin' | 'member';
+  joinedAt: string;
+}
+
+interface ChatGroupRecord {
+  id: string;
+  classroomId: string;
+  name: string;
+  avatar: string;
+  description: string;
+  isDirect: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  pinnedMessageId?: string;
+}
+
+interface ChatMessageRecord {
+  id: string;
+  groupId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  type: 'text' | 'file' | 'camera_image' | 'material_forward';
+  content: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: string;
+  forwardedMaterial?: {
+    id: string;
+    title: string;
+    subjectCode: string;
+    subjectName: string;
+    type: string;
+    fileFormat: string;
+    fileSize: string;
+    snippet?: string;
+  };
+  timestamp: string;
+  createdAt: number;
+  deliveredTo: string[];
+  readBy: string[];
+  isDeleted?: boolean;
+  reactions?: Array<{ emoji: string; userId: string; userName: string }>;
+  replyTo?: {
+    id: string;
+    senderName: string;
+    content: string;
+    type?: string;
+  };
+  isPinned?: boolean;
+  isStarred?: boolean;
+  starredBy?: string[];
+}
+
+// In-Memory Database Collections with Relational Indexes
+let chatGroups: ChatGroupRecord[] = [
+  {
+    id: 'grp-cohort-cls-1',
+    classroomId: 'cls-1',
+    name: 'BTECH26A - General Cohort',
+    avatar: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=150&auto=format&fit=crop&q=80',
+    description: 'Official cohort group for all Section A members to coordinate lectures, lab submissions, exam dates, and lecture notes.',
+    isDirect: false,
+    createdBy: 'user-sarah',
+    createdAt: '2026-08-15T09:00:00Z',
+    updatedAt: '2026-09-06T10:30:00Z',
+  },
+  {
+    id: 'grp-algo-prep',
+    classroomId: 'cls-1',
+    name: 'CS301 Data Structures & Algorithms Prep',
+    avatar: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150&auto=format&fit=crop&q=80',
+    description: 'Daily algorithmic problem discussion, viva preparation, and dynamic programming tips.',
+    isDirect: false,
+    createdBy: 'user-elena',
+    createdAt: '2026-08-22T14:30:00Z',
+    updatedAt: '2026-09-06T09:15:00Z',
+  },
+  {
+    id: 'dm-sarah-elena',
+    classroomId: 'cls-1',
+    name: 'Elena Rostova',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGaR09JxPLMxTUqAOn21XHcUqnAmqIeBD6jAqrDU96ITXbLPrkZZaOCjQK7IIR0PKxWNWRRHW7UpC6dTEYhaUWD4iA8mgfmc13xgb933NjQg-Kp__Lo1419atLEixTCMlfpxIvT1-8pb6FjhhmuDcoj3YBiMdoQrxSHJdiO59ij_2u55zAV4duQwWVxUctNVbs3budTAzNTx5QK-4QBTQeVbxrdva2Bi57wirGxl-DIZIC8wyz5e_v2A',
+    description: 'Direct Conversation',
+    isDirect: true,
+    createdBy: 'user-sarah',
+    createdAt: '2026-08-25T11:00:00Z',
+    updatedAt: '2026-09-06T08:45:00Z',
+  },
+];
+
+let chatGroupMembers: GroupMemberRecord[] = [
+  // General cohort
+  { groupId: 'grp-cohort-cls-1', userId: 'user-sarah', role: 'admin', joinedAt: '2026-08-15T09:00:00Z' },
+  { groupId: 'grp-cohort-cls-1', userId: 'user-michael', role: 'admin', joinedAt: '2026-08-15T09:05:00Z' },
+  { groupId: 'grp-cohort-cls-1', userId: 'user-elena', role: 'member', joinedAt: '2026-08-15T09:10:00Z' },
+  { groupId: 'grp-cohort-cls-1', userId: 'user-david', role: 'member', joinedAt: '2026-08-15T09:15:00Z' },
+
+  // DSA Prep
+  { groupId: 'grp-algo-prep', userId: 'user-elena', role: 'admin', joinedAt: '2026-08-22T14:30:00Z' },
+  { groupId: 'grp-algo-prep', userId: 'user-sarah', role: 'member', joinedAt: '2026-08-22T14:32:00Z' },
+  { groupId: 'grp-algo-prep', userId: 'user-david', role: 'member', joinedAt: '2026-08-22T14:35:00Z' },
+
+  // Direct DM Sarah & Elena
+  { groupId: 'dm-sarah-elena', userId: 'user-sarah', role: 'admin', joinedAt: '2026-08-25T11:00:00Z' },
+  { groupId: 'dm-sarah-elena', userId: 'user-elena', role: 'admin', joinedAt: '2026-08-25T11:00:00Z' },
+];
+
+let chatMessages: ChatMessageRecord[] = [
+  {
+    id: 'msg-101',
+    groupId: 'grp-cohort-cls-1',
+    senderId: 'user-sarah',
+    senderName: 'Sarah Jenkins',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpKVqp8kbAfxGqOzgulKLDI74NQiSdlDhDdFDyQV_evpa8r7d5WkZGkgnCShgY15unIPoRzhmSGM8c5eYPlAfPusWbCSY4vPjAwP8KRomBMr7KQOQX0hIJBjhcSdgOwc2dkZEXm70URgJJ9cLOY4dgO0jxryXS4sw8mAUGz6kgZFPaT6gja0ikk7HNAfoTyv5oY_mEIBEb28YJUw2rW5IOw1WBEJ7mg51EYzStKeEueXcmsQHbIoC-nA',
+    type: 'text',
+    content: 'Welcome everyone to the official BTECH26A cohort chat! You can forward lecture notes, snap textbook queries, and organize study sessions here.',
+    timestamp: 'Yesterday, 02:15 PM',
+    createdAt: Date.now() - 86400000 + 5000,
+    deliveredTo: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+    readBy: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+  },
+  {
+    id: 'msg-102',
+    groupId: 'grp-cohort-cls-1',
+    senderId: 'user-michael',
+    senderName: 'Michael Klein',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBi-zIOKYT1CTN9RV3ZzQNieXOigrdCfr81_ihfbOqXHZzoMgFBdaEoBMZKl89hXhj_Om3SEgrx7dTB_i9FJqzma_T0g0Tf3DtnuXuWmMdQnaX-eOgOcdJLbUhWfy34CChRKQFpmloUWTp4QMGnnPQ-C3Lndf0MXhLQ80s437Z0YbdROLpO8-R6f8rAPpT8SPOAHaGk_thBcwBigM4TyxJMNJZWmNHABG_qY1TNnmdM-E3z0-9U-ATvg',
+    type: 'text',
+    content: 'I have verified and forwarded our Unit 3 Tree Traversals slides from the library. You can check them directly below:',
+    timestamp: 'Yesterday, 03:20 PM',
+    createdAt: Date.now() - 86400000 + 40000,
+    deliveredTo: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+    readBy: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+  },
+  {
+    id: 'msg-103',
+    groupId: 'grp-cohort-cls-1',
+    senderId: 'user-michael',
+    senderName: 'Michael Klein',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBi-zIOKYT1CTN9RV3ZzQNieXOigrdCfr81_ihfbOqXHZzoMgFBdaEoBMZKl89hXhj_Om3SEgrx7dTB_i9FJqzma_T0g0Tf3DtnuXuWmMdQnaX-eOgOcdJLbUhWfy34CChRKQFpmloUWTp4QMGnnPQ-C3Lndf0MXhLQ80s437Z0YbdROLpO8-R6f8rAPpT8SPOAHaGk_thBcwBigM4TyxJMNJZWmNHABG_qY1TNnmdM-E3z0-9U-ATvg',
+    type: 'material_forward',
+    content: 'Unit 3 Binary Trees & Traversals Complete Slides',
+    forwardedMaterial: {
+      id: 'mat-ds-1',
+      title: 'Unit 3 Binary Trees & Traversals Complete Slides',
+      subjectCode: 'CS301',
+      subjectName: 'Data Structures',
+      type: 'slides',
+      fileFormat: 'PDF',
+      fileSize: '4.2 MB',
+      snippet: 'Binary search tree invariants, AVL tree balancing rotations, and Morris in-order traversal algorithms.',
+    },
+    timestamp: 'Yesterday, 03:22 PM',
+    createdAt: Date.now() - 86400000 + 45000,
+    deliveredTo: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+    readBy: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+  },
+  {
+    id: 'msg-104',
+    groupId: 'grp-cohort-cls-1',
+    senderId: 'user-elena',
+    senderName: 'Elena Rostova',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGaR09JxPLMxTUqAOn21XHcUqnAmqIeBD6jAqrDU96ITXbLPrkZZaOCjQK7IIR0PKxWNWRRHW7UpC6dTEYhaUWD4iA8mgfmc13xgb933NjQg-Kp__Lo1419atLEixTCMlfpxIvT1-8pb6FjhhmuDcoj3YBiMdoQrxSHJdiO59ij_2u55zAV4duQwWVxUctNVbs3budTAzNTx5QK-4QBTQeVbxrdva2Bi57wirGxl-DIZIC8wyz5e_v2A',
+    type: 'text',
+    content: 'Super helpful Michael! Does anyone want to practice the previous year questions together before the IAT 1 exams?',
+    timestamp: 'Today, 09:30 AM',
+    createdAt: Date.now() - 3600000,
+    deliveredTo: ['user-sarah', 'user-elena', 'user-michael', 'user-david'],
+    readBy: ['user-sarah', 'user-elena'],
+  },
+  {
+    id: 'msg-201',
+    groupId: 'grp-algo-prep',
+    senderId: 'user-elena',
+    senderName: 'Elena Rostova',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGaR09JxPLMxTUqAOn21XHcUqnAmqIeBD6jAqrDU96ITXbLPrkZZaOCjQK7IIR0PKxWNWRRHW7UpC6dTEYhaUWD4iA8mgfmc13xgb933NjQg-Kp__Lo1419atLEixTCMlfpxIvT1-8pb6FjhhmuDcoj3YBiMdoQrxSHJdiO59ij_2u55zAV4duQwWVxUctNVbs3budTAzNTx5QK-4QBTQeVbxrdva2Bi57wirGxl-DIZIC8wyz5e_v2A',
+    type: 'text',
+    content: 'Hey squad! We are solving topological sort and Dijkstra shortest paths today. Bring your notebook questions.',
+    timestamp: 'Today, 08:45 AM',
+    createdAt: Date.now() - 7200000,
+    deliveredTo: ['user-sarah', 'user-elena', 'user-david'],
+    readBy: ['user-sarah', 'user-elena'],
+  },
+  {
+    id: 'msg-301',
+    groupId: 'dm-sarah-elena',
+    senderId: 'user-elena',
+    senderName: 'Elena Rostova',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGaR09JxPLMxTUqAOn21XHcUqnAmqIeBD6jAqrDU96ITXbLPrkZZaOCjQK7IIR0PKxWNWRRHW7UpC6dTEYhaUWD4iA8mgfmc13xgb933NjQg-Kp__Lo1419atLEixTCMlfpxIvT1-8pb6FjhhmuDcoj3YBiMdoQrxSHJdiO59ij_2u55zAV4duQwWVxUctNVbs3budTAzNTx5QK-4QBTQeVbxrdva2Bi57wirGxl-DIZIC8wyz5e_v2A',
+    type: 'text',
+    content: 'Hi Sarah, are you going to be at the central library seminar room after our 2 PM lecture?',
+    timestamp: 'Today, 10:15 AM',
+    createdAt: Date.now() - 1800000,
+    deliveredTo: ['user-sarah', 'user-elena'],
+    readBy: ['user-sarah', 'user-elena'],
+  },
+  {
+    id: 'msg-302',
+    groupId: 'dm-sarah-elena',
+    senderId: 'user-sarah',
+    senderName: 'Sarah Jenkins',
+    senderAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpKVqp8kbAfxGqOzgulKLDI74NQiSdlDhDdFDyQV_evpa8r7d5WkZGkgnCShgY15unIPoRzhmSGM8c5eYPlAfPusWbCSY4vPjAwP8KRomBMr7KQOQX0hIJBjhcSdgOwc2dkZEXm70URgJJ9cLOY4dgO0jxryXS4sw8mAUGz6kgZFPaT6gja0ikk7HNAfoTyv5oY_mEIBEb28YJUw2rW5IOw1WBEJ7mg51EYzStKeEueXcmsQHbIoC-nA',
+    type: 'text',
+    content: 'Yes! I have reserved desk 4. See you there!',
+    timestamp: 'Today, 10:20 AM',
+    createdAt: Date.now() - 1500000,
+    deliveredTo: ['user-sarah', 'user-elena'],
+    readBy: ['user-sarah', 'user-elena'],
+  },
+];
+
+// Active WebSocket Clients & Online Presence
+const connectedSockets = new Map<WebSocket, { userId: string; classroomId: string }>();
+
+function isUserOnline(userId: string): boolean {
+  for (const client of connectedSockets.values()) {
+    if (client.userId === userId) return true;
+  }
+  return false;
+}
+
+function broadcastToGroup(groupId: string, data: any, excludeWs?: WebSocket) {
+  const memberEntries = chatGroupMembers.filter((m) => m.groupId === groupId);
+  const memberUserIds = new Set(memberEntries.map((m) => m.userId));
+  const payload = JSON.stringify(data);
+
+  for (const [clientWs, info] of connectedSockets.entries()) {
+    if (clientWs !== excludeWs && clientWs.readyState === WebSocket.OPEN && memberUserIds.has(info.userId)) {
+      clientWs.send(payload);
+    }
+  }
+}
+
+function broadcastPresence(userId: string, isOnline: boolean, lastSeen?: string) {
+  const payload = JSON.stringify({
+    type: 'chat:presence',
+    userId,
+    isOnline,
+    lastSeen: lastSeen || (isOnline ? 'Online' : 'Last seen recently'),
+  });
+
+  for (const [clientWs] of connectedSockets.entries()) {
+    if (clientWs.readyState === WebSocket.OPEN) {
+      clientWs.send(payload);
+    }
+  }
+}
+
+// WebSocket Connection Lifecycle
+wss.on('connection', (ws: WebSocket) => {
+  ws.on('message', (messageRaw: string) => {
+    try {
+      const data = JSON.parse(messageRaw.toString());
+      
+      if (data.type === 'auth') {
+        const userId = data.userId || currentUser.id;
+        const classroomId = data.classroomId || currentUser.classroomId;
+        connectedSockets.set(ws, { userId, classroomId });
+
+        // Send current list of online users to the connected client
+        const onlineUserIds = Array.from(
+          new Set(Array.from(connectedSockets.values()).map((c) => c.userId))
+        );
+        ws.send(
+          JSON.stringify({
+            type: 'chat:online_users',
+            onlineUserIds,
+          })
+        );
+
+        // Broadcast to everyone that this user is now online
+        broadcastPresence(userId, true);
+      } else if (data.type === 'typing') {
+        // Typing indicator broadcast
+        if (data.groupId && data.userId) {
+          broadcastToGroup(
+            data.groupId,
+            {
+              type: 'chat:typing',
+              groupId: data.groupId,
+              userId: data.userId,
+              userName: data.userName || 'Someone',
+              isTyping: Boolean(data.isTyping),
+            },
+            ws
+          );
+        }
+      } else if (data.type === 'read') {
+        if (data.groupId && data.userId) {
+          const unread = chatMessages.filter(
+            (m) => m.groupId === data.groupId && !m.readBy.includes(data.userId)
+          );
+          unread.forEach((m) => m.readBy.push(data.userId));
+          broadcastToGroup(data.groupId, {
+            type: 'chat:read_receipt',
+            groupId: data.groupId,
+            userId: data.userId,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error handling WebSocket message:', err);
+    }
+  });
+
+  ws.on('close', () => {
+    const client = connectedSockets.get(ws);
+    connectedSockets.delete(ws);
+    if (client) {
+      const stillConnected = Array.from(connectedSockets.values()).some(
+        (c) => c.userId === client.userId
+      );
+      if (!stillConnected) {
+        broadcastPresence(client.userId, false, 'Just now');
+      }
+    }
+  });
+});
+
+// -------------------------------------------------------------
+// CHAT REST API ENDPOINTS
+// -------------------------------------------------------------
+
+// Helper to find member profile
+function getMemberProfile(userId: string) {
+  const reg = registeredUsers.find((u) => u.id === userId);
+  if (reg) return reg;
+  const mem = members.find((m) => m.id === userId);
+  if (mem) {
+    return {
+      id: mem.id,
+      name: mem.name,
+      email: mem.email,
+      avatar: mem.avatar,
+      role: mem.role,
+      rollNumber: mem.rollNumber,
+    };
+  }
+  return {
+    id: userId,
+    name: 'Classmate',
+    email: 'student@sanctuary.edu',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: 'student',
+    rollNumber: '',
+  };
+}
+
+// 1. Get all conversations (Groups & DMs) for current user
+app.get('/api/chat/groups', (req, res) => {
+  const classroomId = (req.query.classroomId as string) || currentUser.classroomId || 'cls-1';
+  const userId = (req.query.userId as string) || currentUser.id;
+
+  // Find all groups where userId is a member
+  const userMemberships = chatGroupMembers.filter((m) => m.userId === userId);
+  const userGroupIds = new Set(userMemberships.map((m) => m.groupId));
+
+  const relevantGroups = chatGroups
+    .filter((g) => userGroupIds.has(g.id) && (!classroomId || g.classroomId === classroomId))
+    .map((g) => {
+      const groupMembersList = chatGroupMembers.filter((m) => m.groupId === g.id);
+      const adminIds = groupMembersList.filter((m) => m.role === 'admin').map((m) => m.userId);
+      const memberIds = groupMembersList.map((m) => m.userId);
+
+      // If DM, dynamic title and avatar for the other person
+      let displayName = g.name;
+      let displayAvatar = g.avatar;
+
+      if (g.isDirect) {
+        const otherMemberId = memberIds.find((id) => id !== userId) || userId;
+        const otherProfile = getMemberProfile(otherMemberId);
+        displayName = otherProfile.name;
+        displayAvatar = otherProfile.avatar;
+      }
+
+      // Find last message
+      const groupMsgs = chatMessages
+        .filter((m) => m.groupId === g.id)
+        .sort((a, b) => b.createdAt - a.createdAt);
+      const lastMsg = groupMsgs[0];
+
+      // Count unread messages
+      const unreadCount = chatMessages.filter(
+        (m) => m.groupId === g.id && m.senderId !== userId && !m.readBy.includes(userId)
+      ).length;
+
+      return {
+        id: g.id,
+        classroomId: g.classroomId,
+        name: displayName,
+        avatar: displayAvatar,
+        description: g.description,
+        isDirect: g.isDirect,
+        createdBy: g.createdBy,
+        adminIds,
+        memberIds,
+        createdAt: g.createdAt,
+        unreadCount,
+        lastMessage: lastMsg
+          ? {
+              text:
+                lastMsg.type === 'material_forward'
+                  ? `📄 Forwarded: ${lastMsg.forwardedMaterial?.title || 'Material'}`
+                  : lastMsg.type === 'camera_image'
+                  ? '📷 Photo snapshot'
+                  : lastMsg.type === 'file'
+                  ? `📎 File: ${lastMsg.fileName || 'Attachment'}`
+                  : lastMsg.content,
+              timestamp: lastMsg.timestamp,
+              senderName: lastMsg.senderName,
+              senderId: lastMsg.senderId,
+              type: lastMsg.type,
+            }
+          : undefined,
+      };
+    })
+    .sort((a, b) => {
+      const timeA = a.lastMessage ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.lastMessage ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  res.json(relevantGroups);
+});
+
+// 2. Create a new Group
+app.post('/api/chat/groups', (req, res) => {
+  const { name, avatar, description, memberIds = [], classroomId } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Group name is required' });
+  }
+
+  const groupId = `grp-${Date.now()}`;
+  const effectiveClassroomId = classroomId || currentUser.classroomId || 'cls-1';
+  const groupAvatar =
+    avatar ||
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80';
+
+  const newGroup: ChatGroupRecord = {
+    id: groupId,
+    classroomId: effectiveClassroomId,
+    name: name.trim(),
+    avatar: groupAvatar,
+    description: (description || '').trim(),
+    isDirect: false,
+    createdBy: currentUser.id,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  chatGroups.push(newGroup);
+
+  // Group creator becomes admin
+  chatGroupMembers.push({
+    groupId,
+    userId: currentUser.id,
+    role: 'admin',
+    joinedAt: new Date().toISOString(),
+  });
+
+  // Add selected members
+  const uniqueMemberIds = Array.from(new Set(memberIds as string[])).filter(
+    (id) => id !== currentUser.id
+  );
+  uniqueMemberIds.forEach((uid) => {
+    chatGroupMembers.push({
+      groupId,
+      userId: uid,
+      role: 'member',
+      joinedAt: new Date().toISOString(),
+    });
+  });
+
+  // Add system welcome message
+  const welcomeMsg: ChatMessageRecord = {
+    id: `msg-${Date.now()}`,
+    groupId,
+    senderId: currentUser.id,
+    senderName: currentUser.name,
+    senderAvatar: currentUser.avatar,
+    type: 'text',
+    content: `Created group "${newGroup.name}". Welcome everyone!`,
+    timestamp: 'Just now',
+    createdAt: Date.now(),
+    deliveredTo: [currentUser.id],
+    readBy: [currentUser.id],
+  };
+  chatMessages.push(welcomeMsg);
+
+  // Broadcast to all newly added members
+  broadcastToGroup(groupId, {
+    type: 'chat:group_created',
+    group: newGroup,
+  });
+
+  res.status(201).json({
+    ...newGroup,
+    adminIds: [currentUser.id],
+    memberIds: [currentUser.id, ...uniqueMemberIds],
+    unreadCount: 0,
+    lastMessage: {
+      text: welcomeMsg.content,
+      timestamp: welcomeMsg.timestamp,
+      senderName: welcomeMsg.senderName,
+      senderId: welcomeMsg.senderId,
+      type: 'text',
+    },
+  });
+});
+
+// 3. Get or Create a 1-on-1 Direct Chat
+app.post('/api/chat/direct', (req, res) => {
+  const { targetUserId, classroomId } = req.body;
+  if (!targetUserId) {
+    return res.status(400).json({ error: 'Target user ID is required' });
+  }
+
+  const effectiveClassroomId = classroomId || currentUser.classroomId || 'cls-1';
+
+  // Check if a direct chat between these two already exists
+  const myDms = chatGroupMembers
+    .filter((m) => m.userId === currentUser.id)
+    .map((m) => m.groupId);
+
+  let existingGroupId: string | null = null;
+  for (const gid of myDms) {
+    const grp = chatGroups.find((g) => g.id === gid && g.isDirect);
+    if (grp) {
+      const otherMember = chatGroupMembers.find(
+        (m) => m.groupId === gid && m.userId === targetUserId
+      );
+      if (otherMember) {
+        existingGroupId = gid;
+        break;
+      }
+    }
+  }
+
+  if (existingGroupId) {
+    const grp = chatGroups.find((g) => g.id === existingGroupId)!;
+    const targetUser = getMemberProfile(targetUserId);
+    return res.json({
+      ...grp,
+      name: targetUser.name,
+      avatar: targetUser.avatar,
+      adminIds: [currentUser.id, targetUserId],
+      memberIds: [currentUser.id, targetUserId],
+    });
+  }
+
+  // Create new Direct Chat
+  const newDmId = `dm-${[currentUser.id, targetUserId].sort().join('-')}`;
+  const targetUser = getMemberProfile(targetUserId);
+
+  const newDm: ChatGroupRecord = {
+    id: newDmId,
+    classroomId: effectiveClassroomId,
+    name: targetUser.name,
+    avatar: targetUser.avatar,
+    description: 'Direct Message',
+    isDirect: true,
+    createdBy: currentUser.id,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  chatGroups.push(newDm);
+  chatGroupMembers.push({
+    groupId: newDmId,
+    userId: currentUser.id,
+    role: 'admin',
+    joinedAt: new Date().toISOString(),
+  });
+  chatGroupMembers.push({
+    groupId: newDmId,
+    userId: targetUserId,
+    role: 'admin',
+    joinedAt: new Date().toISOString(),
+  });
+
+  res.status(201).json({
+    ...newDm,
+    name: targetUser.name,
+    avatar: targetUser.avatar,
+    adminIds: [currentUser.id, targetUserId],
+    memberIds: [currentUser.id, targetUserId],
+  });
+});
+
+// 4. Get Group Info with Full Member List (Roles & Real-Time Presence)
+app.get('/api/chat/groups/:id', (req, res) => {
+  const group = chatGroups.find((g) => g.id === req.params.id);
+  if (!group) {
+    return res.status(404).json({ error: 'Group not found' });
+  }
+
+  const memberRecords = chatGroupMembers.filter((m) => m.groupId === group.id);
+  const populatedMembers = memberRecords.map((rec) => {
+    const profile = getMemberProfile(rec.userId);
+    return {
+      userId: rec.userId,
+      name: profile.name,
+      email: profile.email,
+      avatar: profile.avatar,
+      role: rec.role,
+      rollNumber: profile.rollNumber,
+      isOnline: isUserOnline(rec.userId),
+      lastSeen: isUserOnline(rec.userId) ? 'Online' : 'Recently active',
+    };
+  });
+
+  res.json({
+    ...group,
+    adminIds: memberRecords.filter((m) => m.role === 'admin').map((m) => m.userId),
+    memberIds: memberRecords.map((m) => m.userId),
+    members: populatedMembers,
+  });
+});
+
+// 5. Update Group Info (Admin only)
+app.patch('/api/chat/groups/:id', (req, res) => {
+  const group = chatGroups.find((g) => g.id === req.params.id);
+  if (!group) {
+    return res.status(404).json({ error: 'Group not found' });
+  }
+
+  // Security Check: Verify user is an admin
+  const userMember = chatGroupMembers.find(
+    (m) => m.groupId === group.id && m.userId === currentUser.id
+  );
+  if (!userMember || userMember.role !== 'admin') {
+    return res.status(403).json({ error: 'Only group admins can update group settings' });
+  }
+
+  const { name, avatar, description } = req.body;
+  if (name && name.trim()) group.name = name.trim();
+  if (avatar && avatar.trim()) group.avatar = avatar.trim();
+  if (typeof description === 'string') group.description = description.trim();
+  group.updatedAt = new Date().toISOString();
+
+  broadcastToGroup(group.id, {
+    type: 'chat:group_updated',
+    groupId: group.id,
+    group,
+  });
+
+  res.json(group);
+});
+
+// 6. Delete Group (Admin only)
+app.delete('/api/chat/groups/:id', (req, res) => {
+  const groupIndex = chatGroups.findIndex((g) => g.id === req.params.id);
+  if (groupIndex === -1) {
+    return res.status(404).json({ error: 'Group not found' });
+  }
+
+  const group = chatGroups[groupIndex];
+  const userMember = chatGroupMembers.find(
+    (m) => m.groupId === group.id && m.userId === currentUser.id
+  );
+  if (!userMember || userMember.role !== 'admin') {
+    return res.status(403).json({ error: 'Only group admins can delete the group' });
+  }
+
+  // Notify members before deleting
+  broadcastToGroup(group.id, {
+    type: 'chat:group_deleted',
+    groupId: group.id,
+  });
+
+  // Cascade delete group, members, and messages
+  chatGroups.splice(groupIndex, 1);
+  chatGroupMembers = chatGroupMembers.filter((m) => m.groupId !== group.id);
+  chatMessages = chatMessages.filter((m) => m.groupId !== group.id);
+
+  res.json({ success: true, message: 'Group deleted successfully' });
+});
+
+// 7. Add Members to Group (Admin only)
+app.post('/api/chat/groups/:id/members', (req, res) => {
+  const group = chatGroups.find((g) => g.id === req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+
+  const adminMember = chatGroupMembers.find(
+    (m) => m.groupId === group.id && m.userId === currentUser.id
+  );
+  if (!adminMember || adminMember.role !== 'admin') {
+    return res.status(403).json({ error: 'Only group admins can add members' });
+  }
+
+  const { memberIds = [] } = req.body;
+  const existingUserIds = new Set(
+    chatGroupMembers.filter((m) => m.groupId === group.id).map((m) => m.userId)
+  );
+
+  const added: string[] = [];
+  memberIds.forEach((uid: string) => {
+    if (!existingUserIds.has(uid)) {
+      chatGroupMembers.push({
+        groupId: group.id,
+        userId: uid,
+        role: 'member',
+        joinedAt: new Date().toISOString(),
+      });
+      added.push(uid);
+    }
+  });
+
+  if (added.length > 0) {
+    broadcastToGroup(group.id, {
+      type: 'chat:members_added',
+      groupId: group.id,
+      addedUserIds: added,
+    });
+  }
+
+  res.json({ success: true, addedCount: added.length });
+});
+
+// 8. Remove Member or Leave Group
+app.delete('/api/chat/groups/:id/members/:userId', (req, res) => {
+  const group = chatGroups.find((g) => g.id === req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+
+  const targetUserId = req.params.userId;
+  const callerMember = chatGroupMembers.find(
+    (m) => m.groupId === group.id && m.userId === currentUser.id
+  );
+
+  // Self removal (leaving) OR admin removal
+  const isSelf = targetUserId === currentUser.id;
+  const isAdmin = callerMember && callerMember.role === 'admin';
+
+  if (!isSelf && !isAdmin) {
+    return res.status(403).json({ error: 'Unauthorized to remove this member' });
+  }
+
+  chatGroupMembers = chatGroupMembers.filter(
+    (m) => !(m.groupId === group.id && m.userId === targetUserId)
+  );
+
+  broadcastToGroup(group.id, {
+    type: 'chat:member_removed',
+    groupId: group.id,
+    userId: targetUserId,
+  });
+
+  res.json({ success: true });
+});
+
+// 9. Promote or Demote Member Role (Admin only)
+app.patch('/api/chat/groups/:id/members/:userId/role', (req, res) => {
+  const group = chatGroups.find((g) => g.id === req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+
+  const callerMember = chatGroupMembers.find(
+    (m) => m.groupId === group.id && m.userId === currentUser.id
+  );
+  if (!callerMember || callerMember.role !== 'admin') {
+    return res.status(403).json({ error: 'Only admins can change member roles' });
+  }
+
+  const targetMember = chatGroupMembers.find(
+    (m) => m.groupId === group.id && m.userId === req.params.userId
+  );
+  if (!targetMember) return res.status(404).json({ error: 'Member not found in group' });
+
+  const { role } = req.body;
+  if (role !== 'admin' && role !== 'member') {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+
+  targetMember.role = role;
+
+  broadcastToGroup(group.id, {
+    type: 'chat:role_changed',
+    groupId: group.id,
+    userId: req.params.userId,
+    newRole: role,
+  });
+
+  res.json({ success: true, newRole: role });
+});
+
+// 10. Get Messages for a Group
+app.get('/api/chat/groups/:id/messages', (req, res) => {
+  const groupId = req.params.id;
+
+  // Verify caller is a member of this group
+  const isMember = chatGroupMembers.some(
+    (m) => m.groupId === groupId && m.userId === currentUser.id
+  );
+  if (!isMember) {
+    return res.status(403).json({ error: 'Access denied: You are not a member of this conversation' });
+  }
+
+  // Mark delivered to currentUser
+  const groupMsgs = chatMessages.filter((m) => m.groupId === groupId);
+  groupMsgs.forEach((m) => {
+    if (!m.deliveredTo.includes(currentUser.id)) {
+      m.deliveredTo.push(currentUser.id);
+    }
+  });
+
+  res.json(groupMsgs);
+});
+
+// 11. Send a Message (Text, Forward Material, Camera Snap, or File)
+app.post('/api/chat/groups/:id/messages', (req, res) => {
+  const groupId = req.params.id;
+  const isMember = chatGroupMembers.some(
+    (m) => m.groupId === groupId && m.userId === currentUser.id
+  );
+  if (!isMember) {
+    return res.status(403).json({ error: 'Cannot send message to a group you do not belong to' });
+  }
+
+  const { type = 'text', content, fileUrl, fileName, fileSize, forwardedMaterial, replyTo } = req.body;
+
+  if (!content && !fileUrl && !forwardedMaterial) {
+    return res.status(400).json({ error: 'Message content or attachment is required' });
+  }
+
+  const now = new Date();
+  const timeFormatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const newMsg: ChatMessageRecord = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    groupId,
+    senderId: currentUser.id,
+    senderName: currentUser.name,
+    senderAvatar: currentUser.avatar,
+    type,
+    content: (content || '').trim(),
+    fileUrl,
+    fileName,
+    fileSize,
+    forwardedMaterial,
+    replyTo: replyTo || undefined,
+    reactions: [],
+    timestamp: timeFormatted,
+    createdAt: Date.now(),
+    deliveredTo: [currentUser.id],
+    readBy: [currentUser.id],
+  };
+
+  chatMessages.push(newMsg);
+
+  // Update group timestamp
+  const group = chatGroups.find((g) => g.id === groupId);
+  if (group) {
+    group.updatedAt = new Date().toISOString();
+  }
+
+  // Instant broadcast via WebSocket
+  broadcastToGroup(groupId, {
+    type: 'chat:message_new',
+    groupId,
+    message: newMsg,
+  });
+
+  res.status(201).json(newMsg);
+});
+
+// 12. React to Message (Toggle reaction)
+app.post('/api/chat/messages/:id/react', (req, res) => {
+  const msg = chatMessages.find((m) => m.id === req.params.id);
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+  const { emoji } = req.body;
+  if (!emoji) return res.status(400).json({ error: 'Emoji is required' });
+
+  if (!msg.reactions) msg.reactions = [];
+  const existingIndex = msg.reactions.findIndex(
+    (r) => r.userId === currentUser.id && r.emoji === emoji
+  );
+
+  if (existingIndex > -1) {
+    // Toggle off
+    msg.reactions.splice(existingIndex, 1);
+  } else {
+    // Add reaction
+    msg.reactions.push({
+      emoji,
+      userId: currentUser.id,
+      userName: currentUser.name,
+    });
+  }
+
+  broadcastToGroup(msg.groupId, {
+    type: 'chat:message_reaction',
+    groupId: msg.groupId,
+    messageId: msg.id,
+    reactions: msg.reactions,
+  });
+
+  res.json({ success: true, reactions: msg.reactions });
+});
+
+// 13. Pin / Unpin Message
+app.post('/api/chat/messages/:id/pin', (req, res) => {
+  const msg = chatMessages.find((m) => m.id === req.params.id);
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+
+  const group = chatGroups.find((g) => g.id === msg.groupId);
+  const willBePinned = !msg.isPinned;
+
+  if (willBePinned) {
+    // Clear other pins in this group
+    chatMessages
+      .filter((m) => m.groupId === msg.groupId)
+      .forEach((m) => {
+        m.isPinned = false;
+      });
+    msg.isPinned = true;
+    if (group) group.pinnedMessageId = msg.id;
+  } else {
+    msg.isPinned = false;
+    if (group && group.pinnedMessageId === msg.id) {
+      group.pinnedMessageId = undefined;
+    }
+  }
+
+  broadcastToGroup(msg.groupId, {
+    type: 'chat:message_pinned',
+    groupId: msg.groupId,
+    messageId: msg.id,
+    isPinned: msg.isPinned,
+    pinnedMessage: willBePinned ? msg : null,
+  });
+
+  res.json({ success: true, isPinned: msg.isPinned, message: msg });
+});
+
+// 14. Star / Unstar Message
+app.post('/api/chat/messages/:id/star', (req, res) => {
+  const msg = chatMessages.find((m) => m.id === req.params.id);
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+
+  if (!msg.starredBy) msg.starredBy = [];
+  const idx = msg.starredBy.indexOf(currentUser.id);
+  let isStarred = false;
+  if (idx > -1) {
+    msg.starredBy.splice(idx, 1);
+    isStarred = false;
+  } else {
+    msg.starredBy.push(currentUser.id);
+    isStarred = true;
+  }
+  msg.isStarred = isStarred;
+
+  res.json({ success: true, isStarred, messageId: msg.id });
+});
+
+// 15. Forward Message to target group(s)
+app.post('/api/chat/messages/forward', (req, res) => {
+  const { messageId, targetGroupIds } = req.body;
+  const sourceMsg = chatMessages.find((m) => m.id === messageId);
+  if (!sourceMsg) return res.status(404).json({ error: 'Source message not found' });
+  if (!Array.isArray(targetGroupIds) || targetGroupIds.length === 0) {
+    return res.status(400).json({ error: 'targetGroupIds must be non-empty array' });
+  }
+
+  const now = new Date();
+  const timeFormatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const createdMsgs: ChatMessageRecord[] = [];
+
+  for (const tGroupId of targetGroupIds) {
+    const isMember = chatGroupMembers.some(
+      (m) => m.groupId === tGroupId && m.userId === currentUser.id
+    );
+    if (!isMember) continue;
+
+    const fwdMsg: ChatMessageRecord = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      groupId: tGroupId,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      type: sourceMsg.type,
+      content: sourceMsg.content,
+      fileUrl: sourceMsg.fileUrl,
+      fileName: sourceMsg.fileName,
+      fileSize: sourceMsg.fileSize,
+      forwardedMaterial: sourceMsg.forwardedMaterial,
+      timestamp: timeFormatted,
+      createdAt: Date.now(),
+      deliveredTo: [currentUser.id],
+      readBy: [currentUser.id],
+    };
+
+    chatMessages.push(fwdMsg);
+    createdMsgs.push(fwdMsg);
+
+    const grp = chatGroups.find((g) => g.id === tGroupId);
+    if (grp) grp.updatedAt = new Date().toISOString();
+
+    broadcastToGroup(tGroupId, {
+      type: 'chat:message_new',
+      groupId: tGroupId,
+      message: fwdMsg,
+    });
+  }
+
+  res.json({ success: true, forwardedCount: createdMsgs.length });
+});
+
+// 15b. Forward Material to Multiple Groups / Direct Chats
+app.post('/api/chat/materials/forward', (req, res) => {
+  const { material, targetGroupIds, targetUserIds, note } = req.body;
+  if (!material) {
+    return res.status(400).json({ error: 'Material is required' });
+  }
+
+  const effectiveClassroomId = currentUser.classroomId || 'cls-1';
+  const resolvedGroupIds = new Set<string>();
+
+  if (Array.isArray(targetGroupIds)) {
+    targetGroupIds.forEach((gid) => {
+      if (typeof gid === 'string' && gid.trim()) resolvedGroupIds.add(gid.trim());
+    });
+  }
+
+  // If targetUserIds provided, resolve or create direct chat DMs
+  if (Array.isArray(targetUserIds)) {
+    for (const targetUserId of targetUserIds) {
+      if (!targetUserId || targetUserId === currentUser.id) continue;
+
+      const myDms = chatGroupMembers
+        .filter((m) => m.userId === currentUser.id)
+        .map((m) => m.groupId);
+
+      let existingGroupId: string | null = null;
+      for (const gid of myDms) {
+        const grp = chatGroups.find((g) => g.id === gid && g.isDirect);
+        if (grp) {
+          const otherMember = chatGroupMembers.find(
+            (m) => m.groupId === gid && m.userId === targetUserId
+          );
+          if (otherMember) {
+            existingGroupId = gid;
+            break;
+          }
+        }
+      }
+
+      if (existingGroupId) {
+        resolvedGroupIds.add(existingGroupId);
+      } else {
+        // Create new Direct Chat
+        const newDmId = `dm-${[currentUser.id, targetUserId].sort().join('-')}`;
+        const targetUser = getMemberProfile(targetUserId);
+
+        const newDm: ChatGroupRecord = {
+          id: newDmId,
+          classroomId: effectiveClassroomId,
+          name: targetUser.name,
+          avatar: targetUser.avatar,
+          description: 'Direct Message',
+          isDirect: true,
+          createdBy: currentUser.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        chatGroups.push(newDm);
+        chatGroupMembers.push({
+          groupId: newDmId,
+          userId: currentUser.id,
+          role: 'admin',
+          joinedAt: new Date().toISOString(),
+        });
+        chatGroupMembers.push({
+          groupId: newDmId,
+          userId: targetUserId,
+          role: 'admin',
+          joinedAt: new Date().toISOString(),
+        });
+
+        resolvedGroupIds.add(newDmId);
+      }
+    }
+  }
+
+  if (resolvedGroupIds.size === 0) {
+    return res.status(400).json({ error: 'At least one target group or user is required' });
+  }
+
+  const now = new Date();
+  const timeFormatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const createdMsgs: ChatMessageRecord[] = [];
+
+  const forwardedMaterialInfo = {
+    id: material.id,
+    title: material.title,
+    subjectCode: material.subjectCode || 'ACAD',
+    subjectName: material.subjectName || material.title,
+    type: material.type || 'notes',
+    fileFormat: material.fileFormat || 'PDF',
+    fileSize: material.fileSize || '1.5 MB',
+    snippet: material.contentSnippet || `${material.title} - Shared from Academic Sanctuary Notes Repository.`,
+  };
+
+  for (const tGroupId of resolvedGroupIds) {
+    const isMember = chatGroupMembers.some(
+      (m) => m.groupId === tGroupId && m.userId === currentUser.id
+    );
+    if (!isMember) continue;
+
+    const fwdMsg: ChatMessageRecord = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      groupId: tGroupId,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      type: 'material_forward',
+      content: note && typeof note === 'string' && note.trim() ? note.trim() : material.title,
+      forwardedMaterial: forwardedMaterialInfo,
+      timestamp: timeFormatted,
+      createdAt: Date.now(),
+      deliveredTo: [currentUser.id],
+      readBy: [currentUser.id],
+    };
+
+    chatMessages.push(fwdMsg);
+    createdMsgs.push(fwdMsg);
+
+    const grp = chatGroups.find((g) => g.id === tGroupId);
+    if (grp) {
+      grp.updatedAt = new Date().toISOString();
+    }
+
+    broadcastToGroup(tGroupId, {
+      type: 'chat:message_new',
+      groupId: tGroupId,
+      message: fwdMsg,
+    });
+  }
+
+  res.json({
+    success: true,
+    forwardedCount: createdMsgs.length,
+    groupIds: Array.from(resolvedGroupIds),
+  });
+});
+
+// 16. Delete Message
+app.delete('/api/chat/messages/:id', (req, res) => {
+  const msg = chatMessages.find((m) => m.id === req.params.id);
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+
+  // Security: Only sender or group admin can delete
+  const isSender = msg.senderId === currentUser.id;
+  const callerMember = chatGroupMembers.find(
+    (m) => m.groupId === msg.groupId && m.userId === currentUser.id
+  );
+  const isAdmin = callerMember && callerMember.role === 'admin';
+
+  if (!isSender && !isAdmin) {
+    return res.status(403).json({ error: 'You are not authorized to delete this message' });
+  }
+
+  msg.isDeleted = true;
+  msg.content = 'This message was deleted';
+  msg.fileUrl = undefined;
+  msg.forwardedMaterial = undefined;
+
+  broadcastToGroup(msg.groupId, {
+    type: 'chat:message_deleted',
+    groupId: msg.groupId,
+    messageId: msg.id,
+  });
+
+  res.json({ success: true, message: msg });
+});
+
+// 17. Mark Conversation Messages as Read
+app.post('/api/chat/groups/:id/read', (req, res) => {
+  const groupId = req.params.id;
+  const unread = chatMessages.filter(
+    (m) => m.groupId === groupId && !m.readBy.includes(currentUser.id)
+  );
+
+  unread.forEach((m) => {
+    m.readBy.push(currentUser.id);
+    if (!m.deliveredTo.includes(currentUser.id)) {
+      m.deliveredTo.push(currentUser.id);
+    }
+  });
+
+  broadcastToGroup(groupId, {
+    type: 'chat:read_receipt',
+    groupId,
+    userId: currentUser.id,
+  });
+
+  res.json({ success: true, readCount: unread.length });
+});
+
+// 18. Update Current User Profile (Name and Avatar)
+app.patch('/api/users/profile', (req, res) => {
+  const { name, avatar } = req.body;
+  if (!currentUser) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+  if (name && typeof name === 'string' && name.trim()) {
+    currentUser.name = name.trim();
+  }
+  if (avatar && typeof avatar === 'string' && avatar.trim()) {
+    currentUser.avatar = avatar.trim();
+  }
+  // Update in registeredUsers
+  const reg = registeredUsers.find((u) => u.id === currentUser.id);
+  if (reg) {
+    if (name && typeof name === 'string' && name.trim()) reg.name = name.trim();
+    if (avatar && typeof avatar === 'string' && avatar.trim()) reg.avatar = avatar.trim();
+  }
+  // Update in members
+  const mem = members.find((m) => m.id === currentUser.id);
+  if (mem) {
+    if (name && typeof name === 'string' && name.trim()) mem.name = name.trim();
+    if (avatar && typeof avatar === 'string' && avatar.trim()) mem.avatar = avatar.trim();
+  }
+  // Update messages sent by current user
+  chatMessages.forEach((m) => {
+    if (m.senderId === currentUser.id) {
+      if (name && typeof name === 'string' && name.trim()) m.senderName = name.trim();
+      if (avatar && typeof avatar === 'string' && avatar.trim()) m.senderAvatar = avatar.trim();
+    }
+  });
+
+  // Broadcast user update to all active clients
+  for (const [clientWs] of connectedSockets.entries()) {
+    if (clientWs.readyState === WebSocket.OPEN) {
+      clientWs.send(
+        JSON.stringify({
+          type: 'chat:user_profile_updated',
+          userId: currentUser.id,
+          name: currentUser.name,
+          avatar: currentUser.avatar,
+        })
+      );
+    }
+  }
+
+  res.json({ success: true, user: currentUser });
+});
+
+// 19. Rename Friend / Contact (Change ONLY friend's name in direct chat)
+app.patch('/api/chat/friend-name', (req, res) => {
+  const { targetUserId, name, groupId } = req.body;
+  if (!targetUserId || !name || !name.trim()) {
+    return res.status(400).json({ error: 'Target user ID and new name are required' });
+  }
+
+  const newName = name.trim();
+
+  // Update in registeredUsers
+  const reg = registeredUsers.find((u) => u.id === targetUserId);
+  if (reg) {
+    reg.name = newName;
+  }
+
+  // Update in members
+  const mem = members.find((m) => m.id === targetUserId);
+  if (mem) {
+    mem.name = newName;
+  }
+
+  // If direct group, update the direct chat group record name if stored
+  if (groupId) {
+    const grp = chatGroups.find((g) => g.id === groupId);
+    if (grp && grp.isDirect) {
+      grp.name = newName;
+    }
+  }
+
+  // Update all messages from this friend so their bubble sender name updates
+  chatMessages.forEach((m) => {
+    if (m.senderId === targetUserId) {
+      m.senderName = newName;
+    }
+  });
+
+  // Broadcast friend name update
+  for (const [clientWs] of connectedSockets.entries()) {
+    if (clientWs.readyState === WebSocket.OPEN) {
+      clientWs.send(
+        JSON.stringify({
+          type: 'chat:friend_renamed',
+          userId: targetUserId,
+          newName,
+          groupId,
+        })
+      );
+    }
+  }
+
+  res.json({ success: true, targetUserId, newName });
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -1292,7 +2650,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Academic Sanctuary server running on http://0.0.0.0:${PORT}`);
   });
 }

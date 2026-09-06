@@ -118,7 +118,24 @@ export const CreateClassroomWizard: React.FC<CreateClassroomWizardProps> = ({
   };
 
   return (
-    <main className="flex-grow w-full max-w-3xl mx-auto px-4 md:px-16 py-8 md:py-12 min-h-screen">
+    <main className="flex-grow w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 min-h-screen">
+      {/* Back button */}
+      <div className="mb-4">
+        <button
+          onClick={() => {
+            if (step > 1) {
+              setStep(step - 1);
+            } else {
+              onCancel();
+            }
+          }}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>{step > 1 ? 'Back to Previous Step' : 'Back to Dashboard'}</span>
+        </button>
+      </div>
+
       {/* Header & Progress */}
       <div className="mb-8 text-left">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1b1c1c] tracking-tight mb-2">

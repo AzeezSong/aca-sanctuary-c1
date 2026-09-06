@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Classroom, User, Announcement } from '../types';
-import { Bell, ArrowLeft, School, Plus, LogIn, ChevronDown, Check, Users, Sparkles, BookOpen, UserPlus, LogOut, KeyRound } from 'lucide-react';
+import { Bell, ArrowLeft, School, Plus, LogIn, ChevronDown, Check, Users, Sparkles, BookOpen, UserPlus, LogOut, KeyRound, MessageCircle } from 'lucide-react';
 
 interface NavbarProps {
   currentView: string;
@@ -9,6 +9,8 @@ interface NavbarProps {
   announcements: Announcement[];
   classrooms: Classroom[];
   onNavigate: (view: string, data?: any) => void;
+  onBack?: () => void;
+  canGoBack?: boolean;
   onOpenCreateClassroom: () => void;
   onOpenJoinClassroom: () => void;
   onSelectClassroom: (classroom: Classroom) => void;
@@ -23,6 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   announcements,
   classrooms,
   onNavigate,
+  onBack,
+  canGoBack = false,
   onOpenCreateClassroom,
   onOpenJoinClassroom,
   onSelectClassroom,
@@ -36,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   // If on landing page
   if (currentView === 'landing') {
     return (
-      <header className="w-full px-4 md:px-16 py-5 flex justify-between items-center z-50 bg-[#FDFCF8]/90 backdrop-blur-sm sticky top-0 border-b border-[#E5E4E2]/60">
+      <header className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-5 flex justify-between items-center z-50 bg-[#FDFCF8]/90 backdrop-blur-sm sticky top-0 border-b border-[#E5E4E2]/60">
         <div 
           onClick={() => onNavigate('landing')} 
           className="flex items-center gap-3 text-[#56615a] cursor-pointer group select-none"
@@ -95,33 +99,33 @@ export const Navbar: React.FC<NavbarProps> = ({
     );
   }
 
-  const showBackButton = currentView !== 'dashboard';
+  const showBackButton = onBack && (canGoBack || currentView !== 'dashboard');
 
   return (
-    <header className="fixed top-0 w-full z-40 flex justify-between items-center px-4 md:px-16 py-3 bg-[#FDFCF8]/95 backdrop-blur-md border-b border-[#E5E4E2]">
+    <header className="fixed top-0 w-full z-40 flex justify-between items-center px-4 sm:px-6 md:px-8 lg:px-10 py-3 bg-[#FDFCF8]/95 backdrop-blur-md border-b border-[#E5E4E2]">
       <div className="flex items-center gap-3">
-        {showBackButton ? (
+        {showBackButton && (
           <button
-            onClick={() => onNavigate('dashboard')}
+            onClick={onBack ? onBack : () => onNavigate('dashboard')}
             className="text-[#434844] hover:bg-[#F0EDED] hover:text-[#1b1c1c] rounded-full p-2 transition-colors flex items-center justify-center cursor-pointer"
-            title="Back to Dashboard"
+            title="Go back to most recent page/feature"
           >
             <span className="material-symbols-outlined text-xl">arrow_back</span>
           </button>
-        ) : (
-          <div 
-            onClick={() => onNavigate('profile')}
-            className="w-10 h-10 rounded-full bg-[#E4E2E1] overflow-hidden flex-shrink-0 cursor-pointer border border-[#C3C8C3] hover:opacity-90 transition-opacity"
-            title="My Profile & Enrolled Cohort"
-          >
-            <img
-              src={currentUser?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGaR09JxPLMxTUqAOn21XHcUqnAmqIeBD6jAqrDU96ITXbLPrkZZaOCjQK7IIR0PKxWNWRRHW7UpC6dTEYhaUWD4iA8mgfmc13xgb933NjQg-Kp__Lo1419atLEixTCMlfpxIvT1-8pb6FjhhmuDcoj3YBiMdoQrxSHJdiO59ij_2u55zAV4duQwWVxUctNVbs3budTAzNTx5QK-4QBTQeVbxrdva2Bi57wirGxl-DIZIC8wyz5e_v2A'}
-              alt={currentUser?.name || 'User'}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
         )}
+
+        <div 
+          onClick={() => onNavigate('profile')}
+          className="w-10 h-10 rounded-full bg-[#E4E2E1] overflow-hidden flex-shrink-0 cursor-pointer border border-[#C3C8C3] hover:opacity-90 transition-opacity"
+          title="My Profile & Enrolled Cohort"
+        >
+          <img
+            src={currentUser?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGaR09JxPLMxTUqAOn21XHcUqnAmqIeBD6jAqrDU96ITXbLPrkZZaOCjQK7IIR0PKxWNWRRHW7UpC6dTEYhaUWD4iA8mgfmc13xgb933NjQg-Kp__Lo1419atLEixTCMlfpxIvT1-8pb6FjhhmuDcoj3YBiMdoQrxSHJdiO59ij_2u55zAV4duQwWVxUctNVbs3budTAzNTx5QK-4QBTQeVbxrdva2Bi57wirGxl-DIZIC8wyz5e_v2A'}
+            alt={currentUser?.name || 'User'}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        </div>
 
         <div className="flex items-center gap-2">
           <button
@@ -258,10 +262,34 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           Members
         </button>
+        <button
+          id="navbar-chat-tab"
+          onClick={() => onNavigate('chat')}
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${
+            currentView === 'chat'
+              ? 'text-[#56615a] font-bold bg-[#F0EDED]'
+              : 'text-[#434844] hover:bg-[#F0EDED] hover:text-[#1b1c1c]'
+          }`}
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span>Chat</span>
+        </button>
       </nav>
 
       {/* Right Actions: Notifications & Avatar */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Chat Quick Action */}
+        <button
+          id="navbar-chat-icon-btn"
+          onClick={() => onNavigate('chat')}
+          className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors relative cursor-pointer ${
+            currentView === 'chat' ? 'bg-[#56615a] text-white' : 'text-[#434844] hover:bg-[#F0EDED]'
+          }`}
+          title="Cohort Chat"
+        >
+          <MessageCircle className="w-5 h-5" />
+        </button>
+
         {/* Notification Bell */}
         <div className="relative">
           <button

@@ -39,19 +39,28 @@ export const DocumentReaderModal: React.FC<DocumentReaderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in">
-      <div className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto animate-in fade-in">
+      <div className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
         {/* Header */}
-        <div className="p-5 md:p-6 border-b border-[#E5E4E2] bg-[#FDFCF8] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="bg-[#b2beb5]/25 text-[#434844] px-2.5 py-1 rounded text-xs font-bold uppercase">
+        <div className="p-4 sm:p-5 md:p-6 border-b border-[#E5E4E2] bg-[#FDFCF8] flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer flex-shrink-0"
+              title="Return to materials"
+            >
+              <span className="material-symbols-outlined text-sm">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <span className="bg-[#b2beb5]/25 text-[#434844] px-2.5 py-1 rounded text-xs font-bold uppercase flex-shrink-0">
               {material.subjectCode}
             </span>
-            <div>
-              <h2 className="text-lg md:text-xl font-bold text-[#1b1c1c] leading-tight">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-[#1b1c1c] leading-tight truncate">
                 {material.title}
               </h2>
-              <div className="text-xs text-[#737874] flex items-center gap-2 mt-0.5">
+              <div className="text-xs text-[#737874] flex items-center gap-2 mt-0.5 truncate">
                 <span>{material.fileFormat} • {material.fileSize}</span>
                 <span>•</span>
                 <span>Uploaded by {material.uploadedBy.name} ({material.uploadedDate})</span>

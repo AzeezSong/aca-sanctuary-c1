@@ -16,6 +16,8 @@ import {
   FileQuestion,
   HelpCircle,
   FolderCheck,
+  Forward,
+  MoreVertical,
 } from 'lucide-react';
 
 interface NotesRepositoryViewProps {
@@ -24,6 +26,8 @@ interface NotesRepositoryViewProps {
   onPreviewMaterial: (material: Material) => void;
   onDownloadMaterial: (material: Material) => void;
   onOpenUpload: (subjectId?: string) => void;
+  onForwardMaterial: (material: Material) => void;
+  onBack?: () => void;
 }
 
 type CategoryType = 'all' | 'notes' | 'slides' | 'pyqs' | 'important_questions';
@@ -35,12 +39,47 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
   onPreviewMaterial,
   onDownloadMaterial,
   onOpenUpload,
+  onForwardMaterial,
+  onBack,
 }) => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [search, setSearch] = useState('');
   const [subjectSearch, setSubjectSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('uploaded-first');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    material: Material;
+  } | null>(null);
+
+  // Close context menu on outside click or escape
+  React.useEffect(() => {
+    const handleClose = () => setContextMenu(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null);
+    };
+    if (contextMenu) {
+      window.addEventListener('click', handleClose);
+      window.addEventListener('contextmenu', handleClose);
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('contextmenu', handleClose);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  const handleContextMenu = (e: React.MouseEvent, material: Material) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const menuWidth = 210;
+    const menuHeight = 175;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 12);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 12);
+    setContextMenu({ x, y, material });
+  };
 
   // Helper to extract numeric timestamp of upload
   const getMaterialUploadTime = (m: Material): number => {
@@ -207,7 +246,20 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
   // ==========================================
   if (!currentSubject) {
     return (
-      <main className="w-full max-w-[1280px] mx-auto px-4 md:px-16 py-8 md:py-10 pb-32 min-h-screen">
+      <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 pb-32 min-h-screen">
+        {/* Back button */}
+        {onBack && (
+          <div className="mb-4">
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Previous Screen</span>
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -254,8 +306,8 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
           </div>
         </div>
 
-        {/* Available Subjects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Available Subjects Horizontal Rectangles List */}
+        <div className="flex flex-col gap-3.5">
           {filteredSubjects.map((sub) => {
             const stats = subjectStats.get(sub.id) || {
               total: 0,
@@ -277,14 +329,14 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
                   setActiveCategory('all');
                   setSearch('');
                 }}
-                className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl p-6 flex flex-col justify-between hover:border-[#56615a] hover:shadow-md transition-all group cursor-pointer relative overflow-hidden"
+                className="bg-[#FEFEFA] border border-[#E5E4E2] hover:border-[#56615a] rounded-2xl p-5 md:p-6 transition-all duration-200 hover:shadow-sm group cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative overflow-hidden"
               >
-                {/* Accent top line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#56615a] to-[#8c9e92] opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Accent indicator line */}
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#56615a] opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                <div>
-                  {/* Top badges */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                {/* Left Info: Code, Subject Title, Instructor, Description */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                     <span className="bg-[#b2beb5]/25 text-[#434844] px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wide">
                       {sub.code}
                     </span>
@@ -292,84 +344,66 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
                     {hasNotes ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#56615a] bg-[#56615a]/10 px-2.5 py-0.5 rounded-full border border-[#56615a]/15">
                         <FolderCheck className="w-3 h-3" />
-                        {stats.total} {stats.total === 1 ? 'Material' : 'Materials'} Available
+                        {stats.total} {stats.total === 1 ? 'Material' : 'Materials'}
                       </span>
                     ) : (
-                      <span className="text-[11px] font-semibold text-[#737874] bg-[#F0EDED] px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold text-[#737874] bg-[#F0EDED] px-2.5 py-0.5 rounded-full">
                         No uploads yet
+                      </span>
+                    )}
+
+                    {stats.earliestDate && (
+                      <span className="text-[11px] text-[#737874] flex items-center gap-1 ml-auto lg:ml-0">
+                        <Clock className="w-3 h-3 text-[#737874]" /> First upload: {stats.earliestDate}
                       </span>
                     )}
                   </div>
 
-                  {/* Title & Professor */}
                   <h3 className="text-xl font-bold text-[#1b1c1c] group-hover:text-[#56615a] transition-colors leading-tight">
                     {sub.name}
                   </h3>
-                  <p className="text-xs text-[#737874] mt-1 font-medium flex items-center gap-1.5">
-                    <span>Instructor: {sub.professor}</span>
+
+                  <p className="text-xs text-[#737874] mt-1.5 font-medium flex items-center gap-1.5 flex-wrap">
+                    <span>Instructor: <strong className="text-[#434844]">{sub.professor}</strong></span>
+                    {sub.description && (
+                      <>
+                        <span className="text-[#DCDAD6] hidden sm:inline">&bull;</span>
+                        <span className="text-[#56615a] truncate max-w-xl">{sub.description}</span>
+                      </>
+                    )}
                   </p>
+                </div>
 
-                  {sub.description && (
-                    <p className="text-xs text-[#434844] mt-3 line-clamp-2 leading-relaxed">
-                      {sub.description}
-                    </p>
-                  )}
-
-                  {/* Category counts pills */}
-                  <div className="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-[#F0EDED]">
-                    <span
-                      className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
-                        stats.notes > 0
-                          ? 'bg-[#F0EDED] text-[#1b1c1c] font-semibold'
-                          : 'bg-transparent text-[#737874]/60'
-                      }`}
-                    >
-                      {stats.notes} Notes
-                    </span>
-                    <span className="text-[#C3C8C3] text-xs">&bull;</span>
-                    <span
-                      className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
-                        stats.slides > 0
-                          ? 'bg-[#F0EDED] text-[#1b1c1c] font-semibold'
-                          : 'bg-transparent text-[#737874]/60'
-                      }`}
-                    >
-                      {stats.slides} Slides
-                    </span>
-                    <span className="text-[#C3C8C3] text-xs">&bull;</span>
-                    <span
-                      className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
-                        stats.pyqs > 0
-                          ? 'bg-[#F0EDED] text-[#1b1c1c] font-semibold'
-                          : 'bg-transparent text-[#737874]/60'
-                      }`}
-                    >
-                      {stats.pyqs} PYQs
-                    </span>
-                    <span className="text-[#C3C8C3] text-xs">&bull;</span>
-                    <span
-                      className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
-                        stats.importantQs > 0
-                          ? 'bg-[#F0EDED] text-[#1b1c1c] font-semibold'
-                          : 'bg-transparent text-[#737874]/60'
-                      }`}
-                    >
-                      {stats.importantQs} Important Qs
-                    </span>
+                {/* Middle: Clean non-congested count pills */}
+                <div className="flex items-center flex-wrap gap-2 py-2 lg:py-0 border-y lg:border-y-0 lg:border-x border-[#F0EDED] px-0 lg:px-6 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 bg-[#F6F3F2] px-3 py-1.5 rounded-lg text-xs">
+                    <FileText className="w-3.5 h-3.5 text-[#56615a]" />
+                    <span className="font-bold text-[#1b1c1c]">{stats.notes}</span>
+                    <span className="text-[#737874]">Notes</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-[#F6F3F2] px-3 py-1.5 rounded-lg text-xs">
+                    <Presentation className="w-3.5 h-3.5 text-amber-700" />
+                    <span className="font-bold text-[#1b1c1c]">{stats.slides}</span>
+                    <span className="text-[#737874]">Slides</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-[#F6F3F2] px-3 py-1.5 rounded-lg text-xs">
+                    <FileQuestion className="w-3.5 h-3.5 text-indigo-700" />
+                    <span className="font-bold text-[#1b1c1c]">{stats.pyqs}</span>
+                    <span className="text-[#737874]">PYQs</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-[#F6F3F2] px-3 py-1.5 rounded-lg text-xs">
+                    <HelpCircle className="w-3.5 h-3.5 text-rose-700" />
+                    <span className="font-bold text-[#1b1c1c]">{stats.importantQs}</span>
+                    <span className="text-[#737874]">Imp Qs</span>
                   </div>
                 </div>
 
-                {/* Card Action Footer */}
-                <div className="mt-5 pt-3 border-t border-[#E5E4E2] flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#56615a] group-hover:underline flex items-center gap-1">
-                    Open Subject Notes <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                  </span>
-
-                  {stats.earliestDate && (
-                    <span className="text-[11px] text-[#737874] flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> First: {stats.earliestDate}
-                    </span>
-                  )}
+                {/* Right Action: Button */}
+                <div className="flex items-center justify-between lg:justify-end gap-3 flex-shrink-0">
+                  <button className="px-4 py-2.5 bg-[#56615a] group-hover:bg-[#434d46] text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer">
+                    <span>Open Subject Notes</span>
+                    <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
                 </div>
               </div>
             );
@@ -392,16 +426,28 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
   // With exact category bar: [ All ] [ Notes ] [ Slides ] [ PYQs ] [ Important Qs ]
   // =========================================================================
   return (
-    <main className="w-full max-w-[1280px] mx-auto px-4 md:px-16 py-8 md:py-10 pb-32 min-h-screen">
+    <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 pb-32 min-h-screen">
       {/* Top Navigation & Breadcrumb */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <button
-          onClick={() => setSelectedSubjectId(null)}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#56615a] hover:text-[#1b1c1c] bg-[#F6F3F2] hover:bg-[#EAE6E4] px-3.5 py-2 rounded-xl border border-[#E5E4E2] transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to All Available Subjects</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+              title="Back to previous page"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          )}
+          <button
+            onClick={() => setSelectedSubjectId(null)}
+            className="inline-flex items-center gap-2 text-xs font-bold text-[#56615a] hover:text-[#1b1c1c] bg-[#F6F3F2] hover:bg-[#EAE6E4] px-3.5 py-2 rounded-xl border border-[#E5E4E2] transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>All Available Subjects</span>
+          </button>
+        </div>
 
         {/* Quick subject switcher */}
         <div className="flex items-center gap-2">
@@ -511,9 +557,9 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
         </div>
       </div>
 
-      {/* Sorting Status Badge */}
+      {/* Sorting Status Badge & Right-Click Hint */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-6 px-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#56615a]/10 text-[#434844] text-xs font-bold border border-[#56615a]/15">
             <Clock className="w-3.5 h-3.5 text-[#56615a]" />
             {sortBy === 'uploaded-first' ? (
@@ -529,6 +575,11 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
           <span className="text-xs text-[#737874]">
             ({sortedMaterials.length} {sortedMaterials.length === 1 ? 'document' : 'documents'})
           </span>
+
+          {/* User Hint about Right-Click */}
+          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-[#56615a] bg-[#d9e6dc]/40 px-2.5 py-0.5 rounded-full border border-[#b2beb5]/40 font-medium">
+            💡 Right-click any note to <strong>Download</strong>, <strong>View</strong>, or <strong>Forward</strong>
+          </span>
         </div>
 
         {sortBy !== 'uploaded-first' && (
@@ -541,8 +592,8 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
         )}
       </div>
 
-      {/* Materials Grid for the Selected Subject */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Materials Horizontal Rectangles List for the Selected Subject */}
+      <div className="flex flex-col gap-3">
         {sortedMaterials.map((item) => {
           const uploadRank = uploadOrderMap.get(item.id);
           const isPresentation = item.type === 'slides' || item.fileFormat === 'PPTX';
@@ -552,26 +603,57 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
           return (
             <div
               key={item.id}
-              className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl p-6 flex flex-col justify-between hover:border-[#56615a] transition-all group relative shadow-[0_4px_20px_rgba(51,51,51,0.02)] hover:shadow-md"
+              id={`material-card-${item.id}`}
+              onContextMenu={(e) => handleContextMenu(e, item)}
+              className="bg-[#FEFEFA] border border-[#E5E4E2] hover:border-[#56615a] rounded-2xl p-4 md:p-5 transition-all shadow-2xs hover:shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 group relative select-text"
             >
-              <div>
-                {/* Header info */}
-                <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-[#b2beb5]/25 text-[#434844] px-2.5 py-0.5 rounded text-[11px] font-bold uppercase">
+              {/* Left Column: Format icon + Detailed Metadata */}
+              <div 
+                className="flex items-start md:items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
+                onClick={() => onPreviewMaterial(item)}
+              >
+                {/* Format Icon Box */}
+                <div className="w-12 h-12 rounded-xl bg-[#F6F3F2] border border-[#E5E4E2] flex flex-col items-center justify-center flex-shrink-0 group-hover:bg-[#56615a]/10 transition-colors">
+                  {isPresentation ? (
+                    <Presentation className="w-5 h-5 text-amber-700" />
+                  ) : isPyq ? (
+                    <FileQuestion className="w-5 h-5 text-indigo-700" />
+                  ) : isImportant ? (
+                    <HelpCircle className="w-5 h-5 text-rose-700" />
+                  ) : (
+                    <FileText className="w-5 h-5 text-[#56615a]" />
+                  )}
+                  <span className="text-[9px] font-black uppercase text-[#737874] tracking-tight mt-0.5">
+                    {item.fileFormat || 'PDF'}
+                  </span>
+                </div>
+
+                {/* Content info */}
+                <div className="min-w-0 flex-1">
+                  {/* Badges line */}
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="bg-[#b2beb5]/25 text-[#434844] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">
                       {item.subjectCode}
                     </span>
-                    <span className="text-[11px] font-semibold text-[#737874] bg-[#F0EDED] px-2 py-0.5 rounded">
-                      {item.fileFormat}
-                    </span>
-                    {item.unit && (
-                      <span className="text-[11px] font-semibold text-[#56615a] bg-[#56615a]/10 px-2 py-0.5 rounded">
-                        {item.unit}
+
+                    {isPresentation ? (
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Presentation className="w-2.5 h-2.5" /> Slides
+                      </span>
+                    ) : isPyq ? (
+                      <span className="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <FileQuestion className="w-2.5 h-2.5" /> PYQs
+                      </span>
+                    ) : isImportant ? (
+                      <span className="text-[10px] font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <HelpCircle className="w-2.5 h-2.5" /> Important Qs
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-[#434844] bg-[#F0EDED] border border-[#E5E4E2] px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <FileText className="w-2.5 h-2.5" /> Notes
                       </span>
                     )}
-                  </div>
 
-                  <div className="flex items-center gap-1.5">
                     {uploadRank && (
                       <span
                         className="bg-[#56615a]/10 text-[#56615a] border border-[#56615a]/20 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight"
@@ -580,86 +662,183 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
                         #{uploadRank} Uploaded
                       </span>
                     )}
-                    <span className="text-xs font-medium text-[#737874]">{item.fileSize}</span>
+
+                    {item.unit && (
+                      <span className="text-[10px] font-semibold text-[#56615a] bg-[#56615a]/10 px-2 py-0.5 rounded">
+                        {item.unit}
+                      </span>
+                    )}
+
+                    <span className="text-xs text-[#737874]">&bull; {item.fileSize}</span>
                   </div>
-                </div>
 
-                {/* Title */}
-                <h3 className="text-lg md:text-xl font-bold text-[#1b1c1c] group-hover:text-[#56615a] transition-colors leading-snug mt-2">
-                  {item.title}
-                </h3>
+                  {/* Title */}
+                  <h3 className="text-base md:text-lg font-bold text-[#1b1c1c] group-hover:text-[#56615a] transition-colors leading-snug">
+                    {item.title}
+                  </h3>
 
-                {/* Category Type Badge */}
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  {isPresentation ? (
-                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Presentation className="w-3 h-3" /> Slides
+                  {/* Uploader, Date and Description line */}
+                  <div className="flex items-center gap-2.5 text-xs text-[#737874] mt-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-4 h-4 rounded-full bg-[#F0EDED] overflow-hidden border border-[#C3C8C3]/50">
+                        <img
+                          src={item.uploadedBy.avatar}
+                          alt={item.uploadedBy.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <span className="text-[#434844] font-medium">{item.uploadedBy.name}</span>
+                    </div>
+
+                    <span>&bull;</span>
+
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-[#737874]" />
+                      {item.uploadedDate}
                     </span>
-                  ) : isPyq ? (
-                    <span className="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <FileQuestion className="w-3 h-3" /> PYQs
-                    </span>
-                  ) : isImportant ? (
-                    <span className="text-[10px] font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <HelpCircle className="w-3 h-3" /> Important Qs
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-[#434844] bg-[#F0EDED] border border-[#E5E4E2] px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> Notes
-                    </span>
-                  )}
 
-                  <span className="text-xs text-[#737874] truncate">{item.subjectName}</span>
-                </div>
-
-                {item.description && (
-                  <p className="text-xs text-[#434844] mt-2 line-clamp-2 leading-relaxed">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Card Footer */}
-              <div className="mt-6 pt-4 border-t border-[#E4E2E1] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#F0EDED] overflow-hidden border border-[#C3C8C3]/50">
-                    <img
-                      src={item.uploadedBy.avatar}
-                      alt={item.uploadedBy.name}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
+                    {item.description && (
+                      <>
+                        <span className="hidden lg:inline text-[#DCDAD6]">&bull;</span>
+                        <span className="hidden lg:inline text-[#737874] truncate max-w-md">
+                          {item.description}
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <span className="text-xs text-[#737874]">{item.uploadedBy.name}</span>
-                </div>
-
-                <div className="flex items-center gap-1 text-xs text-[#737874]">
-                  <Calendar className="w-3 h-3 text-[#737874]" />
-                  <span>{item.uploadedDate}</span>
                 </div>
               </div>
 
-              {/* Hover quick action overlay */}
-              <div className="absolute inset-0 bg-[#F6F3F2]/90 backdrop-blur-[2px] flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all rounded-2xl p-4">
+              {/* Right Column: Clean action buttons + Forward + Context Menu Trigger */}
+              <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center pt-2 md:pt-0 border-t md:border-t-0 border-[#F0EDED] w-full md:w-auto justify-end">
                 <button
+                  id={`preview-btn-${item.id}`}
                   onClick={() => onPreviewMaterial(item)}
-                  className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center text-[#56615a] hover:bg-[#F0EDED] transition-colors cursor-pointer"
-                  title="Read / Preview"
+                  className="px-3.5 py-2 bg-[#56615a] hover:bg-[#434d46] text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                  title="Read / Preview notes"
                 >
-                  <Eye className="w-5 h-5" />
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>View</span>
                 </button>
                 <button
+                  id={`download-btn-${item.id}`}
                   onClick={() => onDownloadMaterial(item)}
-                  className="w-12 h-12 bg-[#56615a] text-white rounded-full shadow-md flex items-center justify-center hover:bg-[#434d46] transition-colors cursor-pointer"
+                  className="px-3 py-2 bg-[#F6F3F2] hover:bg-[#EAE7E6] text-[#434844] text-xs font-semibold rounded-xl transition-colors border border-[#E5E4E2] flex items-center gap-1.5 cursor-pointer"
                   title="Download File"
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="w-3.5 h-3.5 text-[#56615a]" />
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+                <button
+                  id={`forward-btn-${item.id}`}
+                  onClick={() => onForwardMaterial(item)}
+                  className="px-3 py-2 bg-[#008069]/10 hover:bg-[#008069]/20 text-[#008069] text-xs font-bold rounded-xl transition-colors border border-[#008069]/20 flex items-center gap-1.5 cursor-pointer"
+                  title="Forward to Cohort Chat (Direct or Groups)"
+                >
+                  <Forward className="w-3.5 h-3.5 text-[#008069]" />
+                  <span>Forward</span>
+                </button>
+                <button
+                  id={`options-btn-${item.id}`}
+                  onClick={(e) => handleContextMenu(e, item)}
+                  className="p-2 text-[#737874] hover:text-[#1b1c1c] hover:bg-[#F0EDED] rounded-xl transition-colors cursor-pointer"
+                  title="More actions (Download, View, Forward)"
+                >
+                  <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Right-click / Options Context Menu with Exact 3 Options */}
+      {contextMenu && (
+        <div
+          id="material-rightclick-context-menu"
+          style={{
+            top: `${contextMenu.y}px`,
+            left: `${contextMenu.x}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="fixed z-50 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-[#E5E4E2] p-1.5 animate-in fade-in zoom-in-95 duration-150"
+        >
+          {/* Header Info */}
+          <div className="px-3 py-2 border-b border-[#F0EDED] mb-1">
+            <p className="text-xs font-bold text-[#1b1c1c] truncate">
+              {contextMenu.material.title}
+            </p>
+            <div className="text-[10px] text-[#737874] flex items-center gap-1.5 mt-0.5">
+              <span className="font-semibold text-[#56615a]">
+                {contextMenu.material.subjectCode}
+              </span>
+              <span>&bull;</span>
+              <span>{contextMenu.material.fileSize}</span>
+              <span>&bull;</span>
+              <span className="uppercase font-medium">{contextMenu.material.fileFormat}</span>
+            </div>
+          </div>
+
+          <div className="space-y-0.5">
+            {/* Option 1: Download */}
+            <button
+              id="context-option-download"
+              onClick={() => {
+                onDownloadMaterial(contextMenu.material);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-xl transition-colors text-left cursor-pointer group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors">
+                <Download className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-bold">Download</span>
+                <p className="text-[10px] text-[#737874] font-normal">Save file to device</p>
+              </div>
+            </button>
+
+            {/* Option 2: View */}
+            <button
+              id="context-option-view"
+              onClick={() => {
+                onPreviewMaterial(contextMenu.material);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-xl transition-colors text-left cursor-pointer group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors">
+                <Eye className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-bold">View</span>
+                <p className="text-[10px] text-[#737874] font-normal">Read & preview in reader</p>
+              </div>
+            </button>
+
+            {/* Option 3: Forward */}
+            <button
+              id="context-option-forward"
+              onClick={() => {
+                onForwardMaterial(contextMenu.material);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#008069] hover:bg-[#008069]/10 rounded-xl transition-colors text-left cursor-pointer group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#008069]/15 group-hover:bg-[#008069]/25 flex items-center justify-center text-[#008069] transition-colors">
+                <Forward className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-bold text-[#008069]">Forward</span>
+                <p className="text-[10px] text-[#008069]/80 font-normal">
+                  Share to multiple classmates or groups
+                </p>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
 
       {sortedMaterials.length === 0 && (
         <div className="text-center py-16 bg-white border border-[#E5E4E2] rounded-2xl p-8 mt-4">

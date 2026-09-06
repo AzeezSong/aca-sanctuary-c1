@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Member, Classroom, UserRole } from '../types';
-import { Users, Copy, Check, ShieldCheck, UserCheck, Search, Sparkles } from 'lucide-react';
+import { Users, Copy, Check, ShieldCheck, UserCheck, Search, Sparkles, MessageSquare, ArrowLeft } from 'lucide-react';
 
 interface MembersDirectoryViewProps {
   members: Member[];
   classroom: Classroom;
   currentUserRole: UserRole;
   onUpdateRole?: (memberId: string, newRole: UserRole) => void;
+  onStartChat?: (memberId: string) => void;
+  onBack?: () => void;
 }
 
 export const MembersDirectoryView: React.FC<MembersDirectoryViewProps> = ({
@@ -14,6 +16,8 @@ export const MembersDirectoryView: React.FC<MembersDirectoryViewProps> = ({
   classroom,
   currentUserRole,
   onUpdateRole,
+  onStartChat,
+  onBack,
 }) => {
   const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState('');
@@ -32,7 +36,20 @@ export const MembersDirectoryView: React.FC<MembersDirectoryViewProps> = ({
   );
 
   return (
-    <main className="w-full max-w-[1280px] mx-auto px-4 md:px-16 py-8 md:py-10 pb-32 min-h-screen">
+    <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 pb-32 min-h-screen">
+      {/* Back button */}
+      {onBack && (
+        <div className="mb-4">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Previous Screen</span>
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <span className="text-xs font-bold text-[#737874] uppercase tracking-wider">
@@ -125,6 +142,17 @@ export const MembersDirectoryView: React.FC<MembersDirectoryViewProps> = ({
               <span className="text-xs text-[#737874] capitalize bg-[#F6F3F2] px-3 py-1 rounded-lg">
                 {member.role.replace('_', ' ')}
               </span>
+              {onStartChat && (
+                <button
+                  id={`message-member-${member.id}`}
+                  onClick={() => onStartChat(member.id)}
+                  className="px-3 py-1 bg-[#56615a] hover:bg-[#434d46] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  title={`Message ${member.name}`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Message</span>
+                </button>
+              )}
             </div>
           </div>
         ))}

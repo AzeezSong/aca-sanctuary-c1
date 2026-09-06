@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Subject, Material, MaterialType } from '../types';
-import { Download, Eye, Plus, Search, BookOpen, FileCheck, CheckCircle2 } from 'lucide-react';
+import { Download, Eye, Plus, Search, BookOpen, FileCheck, CheckCircle2, Forward, MoreVertical, ArrowLeft } from 'lucide-react';
 
 interface SubjectDetailViewProps {
   subject: Subject;
@@ -8,6 +8,8 @@ interface SubjectDetailViewProps {
   onOpenUpload: (subjectId?: string) => void;
   onPreviewMaterial: (material: Material) => void;
   onDownloadMaterial: (material: Material) => void;
+  onForwardMaterial?: (material: Material) => void;
+  onBack?: () => void;
 }
 
 export const SubjectDetailView: React.FC<SubjectDetailViewProps> = ({
@@ -16,9 +18,43 @@ export const SubjectDetailView: React.FC<SubjectDetailViewProps> = ({
   onOpenUpload,
   onPreviewMaterial,
   onDownloadMaterial,
+  onForwardMaterial,
+  onBack,
 }) => {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    material: Material;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleClose = () => setContextMenu(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null);
+    };
+    if (contextMenu) {
+      window.addEventListener('click', handleClose);
+      window.addEventListener('contextmenu', handleClose);
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('contextmenu', handleClose);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  const handleContextMenu = (e: React.MouseEvent, material: Material) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const menuWidth = 210;
+    const menuHeight = 175;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 12);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 12);
+    setContextMenu({ x, y, material });
+  };
 
   const tabs = [
     { id: 'all', label: 'All' },
@@ -75,7 +111,20 @@ export const SubjectDetailView: React.FC<SubjectDetailViewProps> = ({
     .sort((a, b) => getMaterialUploadTime(a) - getMaterialUploadTime(b));
 
   return (
-    <main className="w-full max-w-[1280px] mx-auto px-4 md:px-16 pt-6 md:pt-8 pb-32 min-h-screen">
+    <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 pt-6 md:pt-8 pb-32 min-h-screen">
+      {/* Back button */}
+      {onBack && (
+        <div className="mb-4">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Previous Screen</span>
+          </button>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -136,84 +185,209 @@ export const SubjectDetailView: React.FC<SubjectDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Content Area: Notes List (Matching exact cards from screenshot) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Content Area: Notes List as Clean Horizontal Rectangles */}
+      <div className="flex flex-col gap-3">
         {sortedMaterials.map((item, index) => (
           <div
             key={item.id}
-            className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl p-6 flex flex-col gap-3 hover:border-[#bdc9c0] transition-all group relative shadow-[0_4px_20px_rgba(51,51,51,0.02)] hover:shadow-md"
+            id={`subject-material-card-${item.id}`}
+            onContextMenu={(e) => handleContextMenu(e, item)}
+            className="bg-[#FEFEFA] border border-[#E5E4E2] hover:border-[#56615a] rounded-2xl p-4 md:p-5 transition-all shadow-2xs hover:shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 group relative select-text"
           >
-            {/* Top metadata */}
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-2 flex-wrap">
+            {/* Left Info: Icon & Metadata */}
+            <div 
+              className="flex items-start md:items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
+              onClick={() => onPreviewMaterial(item)}
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#F6F3F2] border border-[#E5E4E2] flex flex-col items-center justify-center flex-shrink-0 group-hover:bg-[#56615a]/10 transition-colors">
                 <span
-                  className="material-symbols-outlined text-[#b2beb5]"
+                  className="material-symbols-outlined text-[#56615a] text-[22px]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   description
                 </span>
-                <span className="text-[11px] font-bold text-[#434844] bg-[#F0EDED] px-2 py-0.5 rounded">
-                  {item.fileFormat}
+                <span className="text-[9px] font-black uppercase text-[#737874] tracking-tight mt-0.5">
+                  {item.fileFormat || 'PDF'}
                 </span>
-                <span className="bg-[#56615a]/10 text-[#56615a] border border-[#56615a]/20 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight">
-                  #{index + 1} Uploaded
-                </span>
-                {item.unit && (
-                  <span className="text-[11px] font-medium text-[#737874]">
-                    {item.unit}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="text-[11px] font-bold text-[#434844] bg-[#F0EDED] px-2 py-0.5 rounded">
+                    {item.fileFormat}
                   </span>
-                )}
+                  <span className="bg-[#56615a]/10 text-[#56615a] border border-[#56615a]/20 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight">
+                    #{index + 1} Uploaded
+                  </span>
+                  {item.unit && (
+                    <span className="text-[11px] font-medium text-[#737874] bg-[#F6F3F2] px-2 py-0.5 rounded">
+                      {item.unit}
+                    </span>
+                  )}
+                  <span className="text-xs font-medium text-[#737874]">&bull; {item.fileSize}</span>
+                </div>
+
+                <h3 className="text-base md:text-lg font-bold text-[#1b1c1c] leading-snug group-hover:text-[#56615a] transition-colors">
+                  {item.title}
+                </h3>
+
+                <div className="flex items-center gap-2.5 text-xs text-[#737874] mt-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-4 rounded-full bg-[#F0EDED] overflow-hidden border border-[#C3C8C3]/50">
+                      <img
+                        src={item.uploadedBy.avatar}
+                        alt={item.uploadedBy.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <span className="text-[#434844] font-medium">{item.uploadedBy.name}</span>
+                  </div>
+                  <span>&bull;</span>
+                  <span>{item.uploadedDate}</span>
+                  {item.description && (
+                    <>
+                      <span className="hidden lg:inline text-[#DCDAD6]">&bull;</span>
+                      <span className="hidden lg:inline text-[#737874] truncate max-w-md">
+                        {item.description}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
-              <span className="text-xs font-medium text-[#737874]">{item.fileSize}</span>
             </div>
 
-            {/* Note title */}
-            <h3 className="text-xl font-bold text-[#1b1c1c] leading-snug mt-1 group-hover:text-[#56615a] transition-colors">
-              {item.title}
-            </h3>
-
-            {item.description && (
-              <p className="text-xs text-[#434844] line-clamp-2 leading-relaxed">
-                {item.description}
-              </p>
-            )}
-
-            {/* Author and Date Footer */}
-            <div className="flex items-center gap-2.5 mt-auto pt-4 border-t border-[#E4E2E1]">
-              <div className="w-7 h-7 rounded-full bg-[#F0EDED] overflow-hidden flex-shrink-0 border border-[#C3C8C3]/50">
-                <img
-                  src={item.uploadedBy.avatar}
-                  alt={item.uploadedBy.name}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <span className="text-xs text-[#434844] font-medium flex-grow truncate">
-                Uploaded by {item.uploadedBy.name}
-              </span>
-              <span className="text-xs text-[#737874] whitespace-nowrap">{item.uploadedDate}</span>
-            </div>
-
-            {/* Hover Action Overlay */}
-            <div className="absolute inset-0 bg-[#F6F3F2]/90 backdrop-blur-[2px] flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-2xl p-4">
+            {/* Right: Direct Action Buttons + Forward + More Options */}
+            <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center pt-2 md:pt-0 border-t md:border-t-0 border-[#F0EDED] w-full md:w-auto justify-end">
               <button
+                id={`preview-btn-${item.id}`}
                 onClick={() => onPreviewMaterial(item)}
-                className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center text-[#56615a] hover:bg-[#F0EDED] hover:scale-105 transition-all cursor-pointer"
+                className="px-3.5 py-2 bg-[#56615a] hover:bg-[#434d46] text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                 title="Preview Document & Notes"
               >
-                <span className="material-symbols-outlined text-[24px]">visibility</span>
+                <Eye className="w-3.5 h-3.5" />
+                <span>View</span>
               </button>
               <button
+                id={`download-btn-${item.id}`}
                 onClick={() => onDownloadMaterial(item)}
-                className="w-12 h-12 bg-[#56615a] text-white rounded-full shadow-md flex items-center justify-center hover:bg-[#434d46] hover:scale-105 transition-all cursor-pointer"
+                className="px-3 py-2 bg-[#F6F3F2] hover:bg-[#EAE7E6] text-[#434844] text-xs font-semibold rounded-xl transition-colors border border-[#E5E4E2] flex items-center gap-1.5 cursor-pointer"
                 title="Download Study Material"
               >
-                <span className="material-symbols-outlined text-[24px]">download</span>
+                <Download className="w-3.5 h-3.5 text-[#56615a]" />
+                <span className="hidden sm:inline">Download</span>
+              </button>
+              {onForwardMaterial && (
+                <button
+                  id={`forward-btn-${item.id}`}
+                  onClick={() => onForwardMaterial(item)}
+                  className="px-3 py-2 bg-[#008069]/10 hover:bg-[#008069]/20 text-[#008069] text-xs font-bold rounded-xl transition-colors border border-[#008069]/20 flex items-center gap-1.5 cursor-pointer"
+                  title="Forward to Cohort Chat (Direct or Groups)"
+                >
+                  <Forward className="w-3.5 h-3.5 text-[#008069]" />
+                  <span>Forward</span>
+                </button>
+              )}
+              <button
+                id={`options-btn-${item.id}`}
+                onClick={(e) => handleContextMenu(e, item)}
+                className="p-2 text-[#737874] hover:text-[#1b1c1c] hover:bg-[#F0EDED] rounded-xl transition-colors cursor-pointer"
+                title="More actions (Download, View, Forward)"
+              >
+                <MoreVertical className="w-4 h-4" />
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Right-click Context Menu */}
+      {contextMenu && (
+        <div
+          id="subject-material-context-menu"
+          style={{
+            top: `${contextMenu.y}px`,
+            left: `${contextMenu.x}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="fixed z-50 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-[#E5E4E2] p-1.5 animate-in fade-in zoom-in-95 duration-150"
+        >
+          <div className="px-3 py-2 border-b border-[#F0EDED] mb-1">
+            <p className="text-xs font-bold text-[#1b1c1c] truncate">
+              {contextMenu.material.title}
+            </p>
+            <div className="text-[10px] text-[#737874] flex items-center gap-1.5 mt-0.5">
+              <span className="font-semibold text-[#56615a]">
+                {contextMenu.material.subjectCode}
+              </span>
+              <span>&bull;</span>
+              <span>{contextMenu.material.fileSize}</span>
+              <span>&bull;</span>
+              <span className="uppercase font-medium">{contextMenu.material.fileFormat}</span>
+            </div>
+          </div>
+
+          <div className="space-y-0.5">
+            {/* Option 1: Download */}
+            <button
+              id="sub-context-download"
+              onClick={() => {
+                onDownloadMaterial(contextMenu.material);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-xl transition-colors text-left cursor-pointer group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors">
+                <Download className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-bold">Download</span>
+                <p className="text-[10px] text-[#737874] font-normal">Save file to device</p>
+              </div>
+            </button>
+
+            {/* Option 2: View */}
+            <button
+              id="sub-context-view"
+              onClick={() => {
+                onPreviewMaterial(contextMenu.material);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-xl transition-colors text-left cursor-pointer group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors">
+                <Eye className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="font-bold">View</span>
+                <p className="text-[10px] text-[#737874] font-normal">Read & preview in reader</p>
+              </div>
+            </button>
+
+            {/* Option 3: Forward */}
+            {onForwardMaterial && (
+              <button
+                id="sub-context-forward"
+                onClick={() => {
+                  onForwardMaterial(contextMenu.material);
+                  setContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#008069] hover:bg-[#008069]/10 rounded-xl transition-colors text-left cursor-pointer group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#008069]/15 group-hover:bg-[#008069]/25 flex items-center justify-center text-[#008069] transition-colors">
+                  <Forward className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="font-bold text-[#008069]">Forward</span>
+                  <p className="text-[10px] text-[#008069]/80 font-normal">
+                    Share to multiple classmates or groups
+                  </p>
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {sortedMaterials.length === 0 && (
         <div className="text-center py-16 bg-white border border-[#E5E4E2] rounded-2xl p-8">

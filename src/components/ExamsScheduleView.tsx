@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Exam, Material } from '../types';
 import {
+  ArrowLeft,
   Calendar,
   Clock,
   Tag,
@@ -28,6 +29,7 @@ interface ExamsScheduleViewProps {
   onPreviewMaterial?: (material: Material) => void;
   onDownloadMaterial?: (material: Material) => void;
   onOpenUpload?: (subjectId?: string, examType?: string) => void;
+  onBack?: () => void;
 }
 
 export const ExamsScheduleView: React.FC<ExamsScheduleViewProps> = ({
@@ -39,6 +41,7 @@ export const ExamsScheduleView: React.FC<ExamsScheduleViewProps> = ({
   onPreviewMaterial,
   onDownloadMaterial,
   onOpenUpload,
+  onBack,
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [selectedAssessmentFilter, setSelectedAssessmentFilter] = useState<string>('all');
@@ -254,7 +257,20 @@ export const ExamsScheduleView: React.FC<ExamsScheduleViewProps> = ({
   };
 
   return (
-    <main className="w-full max-w-[1280px] mx-auto px-4 md:px-16 py-8 md:py-10 pb-32 min-h-screen">
+    <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 pb-32 min-h-screen">
+      {/* Back button */}
+      {onBack && (
+        <div className="mb-4">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Previous Screen</span>
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -460,8 +476,8 @@ export const ExamsScheduleView: React.FC<ExamsScheduleViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Subject Timetable Cards for this Group in Chronological Order */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {/* Box beneath the Exam Heading containing Subjects as Horizontal Rectangles */}
+                  <div className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl p-4 md:p-5 shadow-xs flex flex-col gap-3">
                     {group.exams.map((exam, examIdx) => {
                       const daysRemaining =
                         exam.daysRemaining !== undefined ? exam.daysRemaining : computeDays(exam.date);
@@ -471,196 +487,127 @@ export const ExamsScheduleView: React.FC<ExamsScheduleViewProps> = ({
                       return (
                         <div
                           key={exam.id}
-                          className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl p-6 flex flex-col justify-between shadow-[0_4px_20px_rgba(51,51,51,0.02)] hover:border-[#b2beb5] transition-all relative group"
+                          className="bg-white border border-[#EAE8E5] hover:border-[#56615a] rounded-xl p-4 md:p-5 transition-all shadow-2xs hover:shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4 group"
                         >
-                          <div>
-                            {/* Card Header */}
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="bg-[#b2beb5]/25 text-[#434844] px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border border-[#b2beb5]/30">
-                                  {exam.subjectCode}
+                          {/* Left Column: Code, Subject Title, Schedule Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                              <span className="bg-[#b2beb5]/25 text-[#434844] px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border border-[#b2beb5]/30">
+                                {exam.subjectCode}
+                              </span>
+                              <span className="text-[11px] font-bold text-[#737874] bg-[#F6F3F2] px-2 py-0.5 rounded-md border border-[#E5E4E2]">
+                                Subject {examIdx + 1} of {group.subjectCount}
+                              </span>
+                              {exam.venue && (
+                                <span className="text-xs text-[#737874] flex items-center gap-1 font-medium">
+                                  <Tag className="w-3 h-3 text-[#56615a]" /> {exam.venue}
                                 </span>
-                                <span className="text-[11px] font-bold text-[#737874] bg-[#F6F3F2] px-2 py-0.5 rounded-md border border-[#E5E4E2]">
-                                  Exam {examIdx + 1} of {group.subjectCount}
-                                </span>
-                              </div>
-
-                              <div className="text-right">
-                                <span className="text-xl font-black text-[#1b1c1c] block leading-none">
-                                  {daysRemaining >= 0 ? daysRemaining : 0}
-                                </span>
-                                <span className="text-[9px] uppercase font-bold text-[#737874] tracking-wider">
-                                  Days left
-                                </span>
-                              </div>
+                              )}
                             </div>
 
-                            {/* Subject Title */}
-                            <h3 className="text-lg font-bold text-[#1b1c1c] mb-3 leading-snug">
+                            <h3 className="text-lg md:text-xl font-bold text-[#1b1c1c] group-hover:text-[#56615a] transition-colors leading-snug">
                               {exam.subjectName}
                             </h3>
 
-                            {/* Date and Time Details */}
-                            <div className="space-y-2 text-xs text-[#434844] bg-[#F9F7F5] p-3 rounded-xl border border-[#ECEAE7]">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-3.5 h-3.5 text-[#56615a] flex-shrink-0" />
-                                <span>
-                                  Date:{' '}
-                                  <strong className="text-[#1b1c1c]">
-                                    {formatDateDisplay(exam.date)}
-                                  </strong>
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-3.5 h-3.5 text-[#56615a] flex-shrink-0" />
-                                <span>
-                                  Time: <strong className="text-[#1b1c1c]">{exam.time}</strong>
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Tag className="w-3.5 h-3.5 text-[#56615a] flex-shrink-0" />
-                                <span>
-                                  Assessment: <strong className="text-[#1b1c1c]">{group.type}</strong>
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* RECOMMENDED STUDY MATERIAL FOR THIS EXAM & SUBJECT */}
-                            <div className="mt-4 pt-3.5 border-t border-[#ECEAE7] space-y-2">
-                              <div className="flex items-center justify-between gap-1">
-                                <div className="flex items-center gap-1.5">
-                                  <Sparkles className="w-3.5 h-3.5 text-[#e5a93c]" />
-                                  <span className="text-xs font-extrabold text-[#1b1c1c] tracking-tight">
-                                    Recommended Material
+                            {/* Clean schedule metadata line */}
+                            <div className="flex items-center gap-4 text-xs text-[#434844] mt-2 flex-wrap">
+                              <span className="flex items-center gap-1.5 font-medium">
+                                <Calendar className="w-3.5 h-3.5 text-[#56615a]" />
+                                <strong className="text-[#1b1c1c]">{formatDateDisplay(exam.date)}</strong>
+                              </span>
+                              <span className="text-[#DCDAD6] hidden sm:inline">&bull;</span>
+                              <span className="flex items-center gap-1.5 font-medium">
+                                <Clock className="w-3.5 h-3.5 text-[#56615a]" />
+                                <span>{exam.time}</span>
+                              </span>
+                              {exam.syllabus && (
+                                <>
+                                  <span className="text-[#DCDAD6] hidden sm:inline">&bull;</span>
+                                  <span className="text-[#737874] truncate max-w-xs sm:max-w-md">
+                                    Syllabus: <strong className="text-[#434844] font-semibold">{exam.syllabus}</strong>
                                   </span>
-                                </div>
-                                {recommendedMats.length > 0 && (
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF3ED] text-[#2A6E3B] border border-[#B5DEC0]">
-                                    {recommendedMats.length} {recommendedMats.length === 1 ? 'doc' : 'docs'}
-                                  </span>
-                                )}
-                              </div>
-
-                              {recommendedMats.length > 0 ? (
-                                <div className="space-y-1.5">
-                                  {recommendedMats.slice(0, 2).map((mat) => (
-                                    <div
-                                      key={mat.id}
-                                      className="bg-[#FAF9F7] hover:bg-[#F3EFEA] border border-[#E5E4E2] hover:border-[#b2beb5] rounded-xl p-2.5 transition-all flex items-center justify-between gap-2.5 group/item"
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span className="w-6 h-6 rounded-md bg-[#56615a]/10 text-[#56615a] flex items-center justify-center text-[9px] font-black uppercase flex-shrink-0">
-                                          {mat.fileFormat || 'PDF'}
-                                        </span>
-                                        <div className="min-w-0">
-                                          <h4
-                                            className="text-xs font-bold text-[#1b1c1c] truncate leading-tight group-hover/item:text-[#56615a] transition-colors"
-                                            title={mat.title}
-                                          >
-                                            {mat.title}
-                                          </h4>
-                                          <div className="flex items-center gap-1.5 text-[10px] text-[#737874] mt-0.5 truncate">
-                                            <span className="font-semibold text-[#56615a]">
-                                              🎯 {mat.recommendedExam || group.type}
-                                            </span>
-                                            {mat.unit && (
-                                              <>
-                                                <span>•</span>
-                                                <span>{mat.unit}</span>
-                                              </>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-1 flex-shrink-0">
-                                        {onPreviewMaterial && (
-                                          <button
-                                            type="button"
-                                            onClick={() => onPreviewMaterial(mat)}
-                                            className="px-2 py-1 bg-white hover:bg-[#56615a] text-[#434844] hover:text-white rounded-md text-[11px] font-bold transition-all border border-[#DCDAD6] hover:border-[#56615a] flex items-center gap-1 cursor-pointer shadow-2xs"
-                                            title="Preview document notes"
-                                          >
-                                            <Eye className="w-3 h-3" />
-                                            <span className="hidden sm:inline">Preview</span>
-                                          </button>
-                                        )}
-                                        {onDownloadMaterial && (
-                                          <button
-                                            type="button"
-                                            onClick={() => onDownloadMaterial(mat)}
-                                            className="p-1 text-[#737874] hover:text-[#1b1c1c] hover:bg-white rounded-md transition-colors cursor-pointer"
-                                            title="Download file"
-                                          >
-                                            <Download className="w-3.5 h-3.5" />
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-
-                                  {recommendedMats.length > 2 && (
-                                    <div className="pt-0.5 flex items-center justify-between text-[11px] px-1">
-                                      <span className="text-[#737874] font-medium">
-                                        +{recommendedMats.length - 2} more materials
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => onNavigateToSubject(exam.subjectCode)}
-                                        className="font-bold text-[#56615a] hover:underline cursor-pointer"
-                                      >
-                                        View all in Notes →
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="bg-[#FAF9F7] border border-dashed border-[#DCDAD6] rounded-xl p-2.5 text-center">
-                                  <p className="text-[11px] text-[#737874] mb-1.5 font-medium">
-                                    No material tagged for <strong className="font-semibold text-[#434844]">{group.type}</strong> yet.
-                                  </p>
-                                  <div className="flex items-center justify-center gap-2 flex-wrap">
-                                    {onOpenUpload && (
-                                      <button
-                                        type="button"
-                                        onClick={() => onOpenUpload(exam.id, group.type)}
-                                        className="px-2.5 py-1 bg-white hover:bg-[#F0EDED] text-[#56615a] hover:text-[#1b1c1c] rounded-lg text-[11px] font-bold border border-[#D1D5DB] transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
-                                      >
-                                        <Upload className="w-3 h-3" /> + Upload for {group.type}
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => onNavigateToSubject(exam.subjectCode)}
-                                      className="text-[11px] font-bold text-[#56615a] hover:underline cursor-pointer"
-                                    >
-                                      All {exam.subjectCode} Notes ({subjectTotalCount})
-                                    </button>
-                                  </div>
-                                </div>
+                                </>
                               )}
                             </div>
                           </div>
 
-                          {/* Card Footer */}
-                          <div className="mt-5 pt-4 border-t border-[#E4E2E1] flex items-center justify-between gap-3">
-                            {onToggleComplete && (
-                              <button
-                                onClick={() => onToggleComplete(exam.id, false)}
-                                className="px-2.5 py-1.5 bg-[#F6F3F2] hover:bg-[#E8F3EB] text-[#56615a] hover:text-[#2A6E3B] text-xs font-bold rounded-lg transition-colors border border-[#E5E4E2] hover:border-[#B5DEC0] flex items-center gap-1.5 cursor-pointer"
-                                title="Mark this exam as concluded/completed"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Mark Done</span>
-                              </button>
-                            )}
+                          {/* Middle Column: Recommended Study Notes (Clean pill & direct preview) */}
+                          <div className="flex flex-col sm:flex-row xl:flex-col items-start sm:items-center xl:items-start gap-2 py-2 xl:py-0 border-y xl:border-y-0 xl:border-x border-[#F0EDED] px-0 xl:px-5 flex-shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-[#e5a93c]" />
+                              <span className="text-xs font-bold text-[#1b1c1c]">Exam Prep Materials:</span>
+                            </div>
 
-                            <button
-                              onClick={() => onNavigateToSubject(exam.subjectCode)}
-                              className="text-xs font-bold text-[#56615a] hover:text-[#1b1c1c] flex items-center gap-1 cursor-pointer ml-auto whitespace-nowrap"
-                            >
-                              Browse All {exam.subjectCode} Notes <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
+                            {recommendedMats.length > 0 ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-semibold text-[#2A6E3B] bg-[#EBF3ED] border border-[#B5DEC0] px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                  {recommendedMats.length} {recommendedMats.length === 1 ? 'Doc' : 'Docs'} Ready
+                                </span>
+                                {onPreviewMaterial && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onPreviewMaterial(recommendedMats[0])}
+                                    className="text-xs font-bold text-[#56615a] hover:text-[#1b1c1c] underline flex items-center gap-1 cursor-pointer"
+                                    title={recommendedMats[0].title}
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    <span>Read Notes</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-[#737874]">No prep doc tagged</span>
+                                {onOpenUpload && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenUpload(exam.id, group.type)}
+                                    className="text-xs font-bold text-[#56615a] hover:underline cursor-pointer"
+                                  >
+                                    + Upload
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right Column: Days Remaining & Actions */}
+                          <div className="flex items-center justify-between xl:justify-end gap-4 flex-shrink-0">
+                            <div className="text-left xl:text-right">
+                              <div className="flex items-baseline gap-1 xl:justify-end">
+                                <span className="text-2xl font-black text-[#1b1c1c] leading-none">
+                                  {daysRemaining >= 0 ? daysRemaining : 0}
+                                </span>
+                                <span className="text-[10px] uppercase font-bold text-[#737874] tracking-wider">
+                                  {daysRemaining === 1 ? 'day left' : 'days left'}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-semibold text-[#56615a] block mt-0.5">
+                                {daysRemaining === 0 ? 'Starts Today!' : daysRemaining < 0 ? 'Concluded' : 'Upcoming'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {onToggleComplete && (
+                                <button
+                                  onClick={() => onToggleComplete(exam.id, false)}
+                                  className="px-3 py-2 bg-[#F6F3F2] hover:bg-[#E8F3EB] text-[#56615a] hover:text-[#2A6E3B] text-xs font-bold rounded-xl transition-colors border border-[#E5E4E2] hover:border-[#B5DEC0] flex items-center gap-1.5 cursor-pointer"
+                                  title="Mark this subject exam as completed"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Mark Done</span>
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => onNavigateToSubject(exam.subjectCode)}
+                                className="px-3 py-2 bg-[#56615a] hover:bg-[#434d46] text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                                title={`Browse all notes for ${exam.subjectCode}`}
+                              >
+                                <span>Notes</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -702,89 +649,87 @@ export const ExamsScheduleView: React.FC<ExamsScheduleViewProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-2xl p-4 md:p-5 shadow-xs flex flex-col gap-3">
               {sortedCompletedExams.map((exam) => {
                 const recMats = getRecommendedMaterials(exam, exam.examType);
 
                 return (
                   <div
                     key={exam.id}
-                    className="bg-[#FAF9F7] border border-[#E5E4E2] rounded-2xl p-6 flex flex-col justify-between shadow-2xs opacity-90 hover:opacity-100 transition-all"
+                    className="bg-white border border-[#EAE8E5] rounded-xl p-4 md:p-5 transition-all shadow-2xs flex flex-col xl:flex-row xl:items-center justify-between gap-4 opacity-90 hover:opacity-100"
                   >
-                    <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="bg-[#E4E2E1] text-[#56615a] px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">
-                            {exam.subjectCode}
-                          </span>
-                          <span className="bg-[#2A6E3B]/10 text-[#2A6E3B] px-2.5 py-0.5 rounded-full text-xs font-extrabold flex items-center gap-1 border border-[#2A6E3B]/20">
-                            <CheckCircle2 className="w-3 h-3" /> Completed
-                          </span>
-                        </div>
-
-                        <span className="px-2 py-0.5 bg-white rounded-md text-[11px] font-bold text-[#56615a] border border-[#E5E4E2]">
+                    {/* Left: Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                        <span className="bg-[#E4E2E1] text-[#56615a] px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">
+                          {exam.subjectCode}
+                        </span>
+                        <span className="bg-[#2A6E3B]/10 text-[#2A6E3B] px-2.5 py-0.5 rounded-full text-xs font-extrabold flex items-center gap-1 border border-[#2A6E3B]/20">
+                          <CheckCircle2 className="w-3 h-3" /> Completed
+                        </span>
+                        <span className="px-2 py-0.5 bg-[#F6F3F2] rounded-md text-[11px] font-bold text-[#56615a] border border-[#E5E4E2]">
                           {exam.examType || exam.venue || 'IAT 1'}
                         </span>
                       </div>
 
-                      <h3 className="text-base font-bold text-[#1b1c1c] mb-2 line-through decoration-[#737874]/40">
+                      <h3 className="text-base md:text-lg font-bold text-[#1b1c1c] leading-snug line-through decoration-[#737874]/40">
                         {exam.subjectName}
                       </h3>
 
-                      <div className="space-y-1.5 text-xs text-[#737874] bg-white p-3 rounded-xl border border-[#E5E4E2]">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-4 text-xs text-[#737874] mt-1.5 flex-wrap">
+                        <span className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-[#737874]" />
-                          <span>
-                            Held on: <strong>{formatDateDisplay(exam.date)}</strong>
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                          Held on: <strong>{formatDateDisplay(exam.date)}</strong>
+                        </span>
+                        <span className="text-[#DCDAD6] hidden sm:inline">&bull;</span>
+                        <span className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-[#737874]" />
-                          <span>
-                            Time: <strong>{exam.time}</strong>
-                          </span>
-                        </div>
+                          Time: <strong>{exam.time}</strong>
+                        </span>
                       </div>
-
-                      {/* Completed exam study materials recap */}
-                      {recMats.length > 0 && (
-                        <div className="mt-3 pt-2.5 border-t border-[#E5E4E2]">
-                          <span className="text-[11px] font-semibold text-[#56615a] block mb-1">
-                            Materials studied ({recMats.length}):
-                          </span>
-                          <div className="flex flex-wrap gap-1">
-                            {recMats.slice(0, 2).map((m) => (
-                              <button
-                                key={m.id}
-                                type="button"
-                                onClick={() => onPreviewMaterial && onPreviewMaterial(m)}
-                                className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white hover:bg-[#F0EDED] text-[#1b1c1c] border border-[#D1D5DB] truncate max-w-[200px] cursor-pointer"
-                                title={m.title}
-                              >
-                                {m.title}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-[#E5E4E2] flex items-center justify-between gap-2">
+                    {/* Middle: Notes studied recap */}
+                    {recMats.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap py-2 xl:py-0 border-y xl:border-y-0 xl:border-x border-[#F0EDED] px-0 xl:px-5 flex-shrink-0">
+                        <span className="text-xs font-semibold text-[#56615a]">
+                          Notes studied:
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {recMats.slice(0, 2).map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => onPreviewMaterial && onPreviewMaterial(m)}
+                              className="text-xs font-medium px-2.5 py-1 rounded-lg bg-[#F6F3F2] hover:bg-[#EAE7E6] text-[#1b1c1c] border border-[#E5E4E2] truncate max-w-[180px] cursor-pointer"
+                              title={m.title}
+                            >
+                              {m.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Right: Actions */}
+                    <div className="flex items-center justify-between xl:justify-end gap-3 flex-shrink-0">
                       {onToggleComplete && (
                         <button
                           onClick={() => onToggleComplete(exam.id, true)}
-                          className="text-[11px] font-bold text-[#737874] hover:text-[#1b1c1c] flex items-center gap-1 cursor-pointer transition-colors"
+                          className="px-3 py-2 bg-[#F6F3F2] hover:bg-white text-[#56615a] text-xs font-bold rounded-xl border border-[#E5E4E2] flex items-center gap-1.5 cursor-pointer transition-colors"
                           title="Move back to upcoming schedule"
                         >
-                          <RotateCcw className="w-3 h-3" /> Mark as Upcoming
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Mark Upcoming</span>
                         </button>
                       )}
 
                       <button
                         onClick={() => onNavigateToSubject(exam.subjectCode)}
-                        className="text-xs font-bold text-[#56615a] hover:text-[#1b1c1c] flex items-center gap-1 cursor-pointer ml-auto"
+                        className="px-3 py-2 bg-[#56615a] hover:bg-[#434d46] text-white text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        Subject Archive <ChevronRight className="w-3.5 h-3.5" />
+                        <span>Notes</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

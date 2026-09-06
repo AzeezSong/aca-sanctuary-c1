@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Classroom, User, Announcement, Exam, Material } from '../types';
-import { Sparkles, Plus, Clock, FileText, ArrowRight, Share2, Eye, Download, Bookmark } from 'lucide-react';
+import { Sparkles, Plus, Clock, FileText, ArrowRight, ArrowLeft, Share2, Eye, Download, Bookmark } from 'lucide-react';
 
 interface DashboardViewProps {
   classroom: Classroom;
@@ -9,6 +9,7 @@ interface DashboardViewProps {
   nextExam: Exam | null;
   recentMaterials: Material[];
   onNavigate: (view: string, data?: any) => void;
+  onBack?: () => void;
   onOpenUpload: () => void;
   onPreviewMaterial: (material: Material) => void;
   onAddAnnouncement: (title: string, description: string) => void;
@@ -21,6 +22,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   nextExam,
   recentMaterials,
   onNavigate,
+  onBack,
   onOpenUpload,
   onPreviewMaterial,
   onAddAnnouncement,
@@ -52,9 +54,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <main className="w-full max-w-[1280px] px-4 md:px-16 py-6 md:py-10 flex flex-col gap-8 mx-auto min-h-screen">
+    <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 flex flex-col gap-6 min-h-screen">
+      {/* Back button */}
+      {onBack && (
+        <div className="self-start">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Previous Screen</span>
+          </button>
+        </div>
+      )}
+
       {/* Welcome Header */}
-      <section className="flex flex-col gap-1 pt-2">
+      <section className="flex flex-col gap-1 pt-1">
         <div className="flex items-center justify-between">
           <p className="text-xs md:text-sm font-semibold text-[#737874] tracking-wider uppercase">
             {classroom ? classroom.name : 'B.TECH CSE 2026 - SECTION A'}
@@ -199,6 +214,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Members
           </button>
           <button
+            id="quick-access-chat-btn"
+            onClick={() => onNavigate('chat')}
+            className="px-4 py-2 rounded-full bg-[#F6F3F2] hover:bg-[#F0EDED] border border-[#E4E2E1] text-[#1b1c1c] font-semibold text-xs md:text-sm transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">chat</span>
+            Cohort Chat
+          </button>
+          <button
             onClick={() => onNavigate('exams')}
             className="px-4 py-2 rounded-full bg-[#F6F3F2] hover:bg-[#F0EDED] border border-[#E4E2E1] text-[#1b1c1c] font-semibold text-xs md:text-sm transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
           >
@@ -229,7 +252,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
             {recentMaterials.map((file) => (
               <div
                 key={file.id}
