@@ -579,22 +579,22 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                               onClick={() =>
                                 setActionMenuUser(actionMenuUser === m.userId ? null : m.userId)
                               }
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#737874] hover:bg-[#F0EDED] transition-colors cursor-pointer"
+                              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#737874] hover:text-[#1b1c1c] hover:bg-[#E5E4E2] transition-colors cursor-pointer"
                             >
-                              <MoreVertical className="w-3.5 h-3.5" />
+                              <MoreVertical className="w-5 h-5" />
                             </button>
 
                             {actionMenuUser === m.userId && (
-                              <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-[#E5E4E2] py-1 z-50 animate-in fade-in">
+                              <div className="absolute right-0 mt-1 w-52 bg-white rounded-2xl shadow-2xl border-2 border-[#E5E4E2] py-2 z-50 animate-in fade-in">
                                 {isMemberAdmin ? (
                                   <button
                                     onClick={() => {
                                       onChangeRole(m.userId, 'member');
                                       setActionMenuUser(null);
                                     }}
-                                    className="w-full text-left px-3 py-1.5 text-xs text-[#434844] hover:bg-[#F0EDED] flex items-center gap-2 cursor-pointer"
+                                    className="w-full text-left px-4 py-2.5 text-xs sm:text-sm font-bold text-[#434844] hover:bg-[#F0EDED] flex items-center gap-2.5 cursor-pointer"
                                   >
-                                    <Shield className="w-3.5 h-3.5 text-[#737874]" /> Dismiss as Admin
+                                    <Shield className="w-4 h-4 text-[#737874]" /> Dismiss as Admin
                                   </button>
                                 ) : (
                                   <button
@@ -602,9 +602,9 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                                       onChangeRole(m.userId, 'admin');
                                       setActionMenuUser(null);
                                     }}
-                                    className="w-full text-left px-3 py-1.5 text-xs text-[#00a884] hover:bg-[#F0EDED] flex items-center gap-2 font-semibold cursor-pointer"
+                                    className="w-full text-left px-4 py-2.5 text-xs sm:text-sm text-[#008069] hover:bg-[#008069]/10 flex items-center gap-2.5 font-bold cursor-pointer"
                                   >
-                                    <ShieldCheck className="w-3.5 h-3.5" /> Make Group Admin
+                                    <ShieldCheck className="w-4 h-4" /> Make Group Admin
                                   </button>
                                 )}
 
@@ -613,9 +613,9 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                                     onRemoveMember(m.userId);
                                     setActionMenuUser(null);
                                   }}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-[#F0EDED] cursor-pointer"
+                                  className="w-full text-left px-4 py-2.5 text-xs sm:text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 border-t border-[#F0EDED] cursor-pointer"
                                 >
-                                  <UserMinus className="w-3.5 h-3.5" /> Remove from Group
+                                  <UserMinus className="w-4 h-4" /> Remove from Group
                                 </button>
                               </div>
                             )}
@@ -632,7 +632,7 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
           {/* ========================================================= */}
           {/* 5. GROUP OPERATIONS (LEAVE / DELETE) */}
           {/* ========================================================= */}
-          <div className="bg-white border-y border-[#E5E4E2] p-4 shadow-2xs space-y-2">
+          <div className="bg-white border-y border-[#E5E4E2] p-4 sm:p-5 shadow-xs space-y-3">
             {!group.isDirect && (
               <button
                 id="leave-group-btn"
@@ -641,9 +641,9 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                     onLeaveGroup();
                   }
                 }}
-                className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-red-100"
+                className="w-full py-3.5 px-4 rounded-2xl text-xs sm:text-sm font-black text-red-600 hover:bg-red-50 flex items-center justify-center gap-2.5 transition-colors cursor-pointer border-2 border-red-200"
               >
-                <LogOut className="w-4 h-4" /> Exit Group
+                <LogOut className="w-4 h-4 stroke-[2.5]" /> Exit Group
               </button>
             )}
 
@@ -655,9 +655,9 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                     onDeleteGroup();
                   }
                 }}
-                className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl text-xs sm:text-sm font-black text-red-700 bg-red-100 hover:bg-red-200 flex items-center justify-center gap-2.5 transition-colors cursor-pointer border-2 border-red-300"
               >
-                <Trash2 className="w-4 h-4" /> Delete Group
+                <Trash2 className="w-4 h-4 stroke-[2.5]" /> Delete Group
               </button>
             )}
           </div>
@@ -665,21 +665,29 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
 
         {/* Modal: Add Classmates to Group */}
         {showAddModal && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-[#E5E4E2] p-4 flex flex-col max-h-[75vh]">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E5E4E2]">
-                <h4 className="text-sm font-bold text-[#1b1c1c]">Add Members</h4>
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="w-full max-w-xl bg-[#FEFEFA] rounded-3xl shadow-2xl border-2 border-[#E5E4E2] p-6 sm:p-7 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-4 border-b-2 border-[#F0EDED]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#008069]/15 text-[#008069] flex items-center justify-center font-bold">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base sm:text-lg font-black text-[#1b1c1c]">Add Classmates to Group</h4>
+                    <p className="text-xs text-[#56615a] font-medium">Select cohort members to invite</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="text-[#737874] hover:text-[#1b1c1c] cursor-pointer"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[#737874] hover:text-[#1b1c1c] hover:bg-[#E5E4E2] transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto py-3 space-y-1.5 divide-y divide-[#F0EDED] scrollbar-thin">
+              <div className="flex-1 overflow-y-auto py-4 space-y-2 divide-y divide-[#F0EDED] scrollbar-thin">
                 {availableToAdd.length === 0 ? (
-                  <p className="text-xs text-center text-[#737874] py-6">
+                  <p className="text-sm font-semibold text-center text-[#737874] py-10">
                     All classmates from this cohort are already members of this group.
                   </p>
                 ) : (
@@ -693,29 +701,33 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                             isSelected ? prev.filter((id) => id !== clsMem.id) : [...prev, clsMem.id]
                           );
                         }}
-                        className="pt-1.5 first:pt-0 flex items-center justify-between p-2 rounded-xl hover:bg-[#F9F8F6] cursor-pointer"
+                        className={`pt-2 first:pt-0 flex items-center justify-between p-3.5 rounded-2xl transition-all cursor-pointer border-2 ${
+                          isSelected
+                            ? 'bg-[#008069]/10 border-[#008069] shadow-xs'
+                            : 'border-transparent hover:bg-[#F6F4F0]'
+                        }`}
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-3">
                           <img
                             src={clsMem.avatar}
                             alt={clsMem.name}
-                            className="w-8 h-8 rounded-full object-cover"
+                            className="w-10 h-10 rounded-2xl object-cover border border-[#E5E4E2]"
                             referrerPolicy="no-referrer"
                           />
                           <div>
-                            <div className="text-xs font-bold text-[#1b1c1c]">{clsMem.name}</div>
-                            <div className="text-[10px] text-[#737874]">{clsMem.rollNumber}</div>
+                            <div className="text-sm font-black text-[#1b1c1c]">{clsMem.name}</div>
+                            <div className="text-xs text-[#56615a] font-medium">{clsMem.rollNumber} • {clsMem.email}</div>
                           </div>
                         </div>
 
                         <div
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
                             isSelected
-                              ? 'bg-[#00a884] border-[#00a884] text-white'
+                              ? 'bg-[#008069] border-[#008069] text-white'
                               : 'border-[#C3C8C3] bg-white'
                           }`}
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
                         </div>
                       </div>
                     );
@@ -723,17 +735,17 @@ export const GroupInfoDrawer: React.FC<GroupInfoDrawerProps> = ({
                 )}
               </div>
 
-              <div className="pt-3 border-t border-[#E5E4E2] flex justify-end gap-2">
+              <div className="pt-4 border-t-2 border-[#F0EDED] flex justify-end items-center gap-3">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-medium text-[#737874] hover:bg-[#F0EDED] cursor-pointer"
+                  className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-[#737874] hover:text-[#1b1c1c] hover:bg-[#E5E4E2] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={selectedToAdd.length === 0}
                   onClick={handleConfirmAddMembers}
-                  className="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#00a884] hover:bg-[#008f70] text-white disabled:opacity-40 cursor-pointer shadow-xs"
+                  className="px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black bg-[#008069] hover:bg-[#006a57] text-white disabled:opacity-40 transition-all cursor-pointer shadow-md active:scale-98"
                 >
                   Add Selected ({selectedToAdd.length})
                 </button>

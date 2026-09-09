@@ -152,72 +152,72 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in">
-      <div className="bg-[#FEFEFA] border border-[#E5E4E2] rounded-3xl max-w-3xl w-full p-6 sm:p-8 md:p-10 shadow-2xl relative my-6 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 md:p-8 overflow-y-auto animate-in fade-in">
+      <div className="bg-[#FEFEFA] border-2 border-[#E5E4E2] rounded-3xl max-w-4xl w-full p-6 sm:p-8 md:p-10 shadow-2xl relative my-6 max-h-[94vh] flex flex-col">
         {/* Top Header with Back Button */}
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#E5E4E2]">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between pb-5 mb-5 border-b-2 border-[#F0EDED]">
+          <div className="flex items-center gap-3.5 sm:gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#434844] hover:text-[#1b1c1c] text-xs font-bold transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#F0EDED] hover:bg-[#E4E2E1] text-[#1b1c1c] text-xs sm:text-sm font-bold transition-colors cursor-pointer border border-[#E5E4E2]"
               title="Return to previous screen"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
             </button>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#b2beb5]/30 flex items-center justify-center text-[#56615a]">
-                <Upload className="w-4 h-4" />
+            <div className="flex items-center gap-3 sm:gap-3.5">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#56615a]/15 flex items-center justify-center text-[#56615a] flex-shrink-0">
+                <Upload className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-[#1b1c1c] leading-tight">
+                <h3 className="text-xl sm:text-2xl font-black text-[#1b1c1c] leading-tight">
                   Upload & Create Study Material
                 </h3>
-                <p className="text-[11px] text-[#737874]">
-                  Upload lecture files or type notes manually with custom subject and exam parameters
+                <p className="text-xs sm:text-sm text-[#56615a] font-medium mt-0.5">
+                  Upload lecture files or write notes manually with subject, syllabus, and exam tags
                 </p>
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#737874] hover:text-[#1b1c1c] p-2 hover:bg-[#F0EDED] rounded-full transition-colors"
+            className="text-[#737874] hover:text-[#1b1c1c] p-2.5 hover:bg-[#F0EDED] rounded-2xl transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 overflow-y-auto pr-1 flex-grow">
+        <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto pr-1 sm:pr-2 flex-grow">
           {/* SECTION 1: Subject Course - Dropdown vs Manual Input */}
-          <div className="bg-[#F9F6EE] border border-[#E5E4E2] rounded-2xl p-4 sm:p-5 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="text-xs font-bold text-[#1b1c1c] flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-[#56615a]" />
+          <div className="bg-[#F9F6EE] border-2 border-[#E5E4E2] rounded-3xl p-5 sm:p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label className="text-sm sm:text-base font-black text-[#1b1c1c] flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#56615a]" />
                 Subject Course *
               </label>
-              <div className="flex items-center gap-1 bg-white border border-[#D8DCD6] p-1 rounded-xl text-xs">
+              <div className="flex items-center gap-1.5 bg-white border-2 border-[#D8DCD6] p-1 rounded-2xl text-xs sm:text-sm">
                 <button
                   type="button"
                   onClick={() => setSubjectMode('dropdown')}
-                  className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
                     subjectMode === 'dropdown'
                       ? 'bg-[#56615a] text-white shadow-xs'
-                      : 'text-[#737874] hover:text-[#1b1c1c]'
+                      : 'text-[#56615a] hover:text-[#1b1c1c]'
                   }`}
                 >
-                  <List className="w-3 h-3" /> Select from List
+                  <List className="w-4 h-4" /> Select from List
                 </button>
                 <button
                   type="button"
                   onClick={() => setSubjectMode('manual')}
-                  className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
                     subjectMode === 'manual'
                       ? 'bg-[#56615a] text-white shadow-xs'
-                      : 'text-[#737874] hover:text-[#1b1c1c]'
+                      : 'text-[#56615a] hover:text-[#1b1c1c]'
                   }`}
                 >
-                  <Edit3 className="w-3 h-3" /> ✍️ Write Manually
+                  <Edit3 className="w-4 h-4" /> ✍️ Write Manually
                 </button>
               </div>
             </div>
@@ -227,7 +227,7 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                 <select
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3.5 sm:p-4 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6] focus:border-[#56615a]"
                   required
                 >
                   {subjects.map((sub) => (
@@ -236,14 +236,14 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-[#737874] mt-1.5">
-                  Need a subject not listed? Switch to <strong>Write Manually</strong> above to type any course name!
+                <p className="text-xs text-[#56615a] font-medium mt-2">
+                  Need a course not listed above? Click <strong>✍️ Write Manually</strong> to type your custom course!
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 animate-in fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1 animate-in fade-in">
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] font-bold text-[#434844] block mb-1">
+                  <label className="text-xs sm:text-sm font-bold text-[#434844] block mb-1.5">
                     Course Name *
                   </label>
                   <input
@@ -252,11 +252,11 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                     placeholder="e.g. Artificial Intelligence & Deep Learning"
                     value={manualSubjectName}
                     onChange={(e) => setManualSubjectName(e.target.value)}
-                    className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                    className="paper-input w-full p-3 sm:p-3.5 rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-[#434844] block mb-1">
+                  <label className="text-xs sm:text-sm font-bold text-[#434844] block mb-1.5">
                     Course Code *
                   </label>
                   <input
@@ -265,11 +265,11 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                     placeholder="e.g. CS405"
                     value={manualSubjectCode}
                     onChange={(e) => setManualSubjectCode(e.target.value)}
-                    className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                    className="paper-input w-full p-3 sm:p-3.5 rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                   />
                 </div>
                 <div className="sm:col-span-3">
-                  <label className="text-[11px] font-bold text-[#434844] block mb-1">
+                  <label className="text-xs sm:text-sm font-bold text-[#434844] block mb-1.5">
                     Faculty / Professor Name (Optional)
                   </label>
                   <input
@@ -277,7 +277,7 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                     placeholder="e.g. Dr. Alan Turing"
                     value={manualProfessor}
                     onChange={(e) => setManualProfessor(e.target.value)}
-                    className="paper-input w-full p-2 rounded-xl text-xs font-medium text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                    className="paper-input w-full p-3 rounded-2xl text-sm font-medium text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                   />
                 </div>
               </div>
@@ -286,7 +286,7 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
 
           {/* SECTION 2: Document Title */}
           <div>
-            <label className="text-xs font-bold text-[#434844] block mb-1">
+            <label className="text-xs sm:text-sm font-black text-[#1b1c1c] block mb-1.5">
               Document Title *
             </label>
             <input
@@ -295,22 +295,22 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
               placeholder="e.g. Neural Networks Backpropagation & Optimization Algorithms"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="paper-input w-full p-3 rounded-xl text-xs sm:text-sm font-medium text-[#1b1c1c] border border-[#D8DCD6]"
+              className="paper-input w-full p-3.5 sm:p-4 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] border-2 border-[#D8DCD6] focus:border-[#56615a]"
             />
           </div>
 
           {/* SECTION 3: Category & Format (with manual text entry) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {/* Category / Type */}
-            <div className="bg-[#F9F6EE] border border-[#E5E4E2] rounded-2xl p-3.5 space-y-2">
+            <div className="bg-[#F9F6EE] border-2 border-[#E5E4E2] rounded-3xl p-4 sm:p-5 space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#434844]">Category / Type *</label>
-                <div className="flex items-center gap-1 text-[10px] font-bold">
+                <label className="text-xs sm:text-sm font-extrabold text-[#1b1c1c]">Category / Type *</label>
+                <div className="flex items-center gap-1 bg-white border border-[#D8DCD6] p-1 rounded-xl text-xs font-bold">
                   <button
                     type="button"
                     onClick={() => setTypeMode('dropdown')}
-                    className={`px-2 py-0.5 rounded cursor-pointer ${
-                      typeMode === 'dropdown' ? 'bg-[#56615a] text-white' : 'text-[#737874]'
+                    className={`px-2.5 py-1 rounded-lg cursor-pointer ${
+                      typeMode === 'dropdown' ? 'bg-[#56615a] text-white' : 'text-[#56615a]'
                     }`}
                   >
                     List
@@ -318,8 +318,8 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setTypeMode('manual')}
-                    className={`px-2 py-0.5 rounded cursor-pointer ${
-                      typeMode === 'manual' ? 'bg-[#56615a] text-white' : 'text-[#737874]'
+                    className={`px-2.5 py-1 rounded-lg cursor-pointer ${
+                      typeMode === 'manual' ? 'bg-[#56615a] text-white' : 'text-[#56615a]'
                     }`}
                   >
                     ✍️ Write
@@ -331,7 +331,7 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as MaterialType)}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3 sm:p-3.5 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                 >
                   <option value="notes">Lecture Notes</option>
                   <option value="slides">Presentation Slides</option>
@@ -346,21 +346,21 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                   placeholder="e.g. Lab Manual, Formula Sheet, Cheat Sheet"
                   value={manualType}
                   onChange={(e) => setManualType(e.target.value)}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3 sm:p-3.5 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                 />
               )}
             </div>
 
             {/* File Format */}
-            <div className="bg-[#F9F6EE] border border-[#E5E4E2] rounded-2xl p-3.5 space-y-2">
+            <div className="bg-[#F9F6EE] border-2 border-[#E5E4E2] rounded-3xl p-4 sm:p-5 space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#434844]">File Format</label>
-                <div className="flex items-center gap-1 text-[10px] font-bold">
+                <label className="text-xs sm:text-sm font-extrabold text-[#1b1c1c]">File Format</label>
+                <div className="flex items-center gap-1 bg-white border border-[#D8DCD6] p-1 rounded-xl text-xs font-bold">
                   <button
                     type="button"
                     onClick={() => setFormatMode('dropdown')}
-                    className={`px-2 py-0.5 rounded cursor-pointer ${
-                      formatMode === 'dropdown' ? 'bg-[#56615a] text-white' : 'text-[#737874]'
+                    className={`px-2.5 py-1 rounded-lg cursor-pointer ${
+                      formatMode === 'dropdown' ? 'bg-[#56615a] text-white' : 'text-[#56615a]'
                     }`}
                   >
                     List
@@ -368,8 +368,8 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setFormatMode('manual')}
-                    className={`px-2 py-0.5 rounded cursor-pointer ${
-                      formatMode === 'manual' ? 'bg-[#56615a] text-white' : 'text-[#737874]'
+                    className={`px-2.5 py-1 rounded-lg cursor-pointer ${
+                      formatMode === 'manual' ? 'bg-[#56615a] text-white' : 'text-[#56615a]'
                     }`}
                   >
                     ✍️ Write
@@ -381,7 +381,7 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                 <select
                   value={fileFormat}
                   onChange={(e) => setFileFormat(e.target.value as FileFormat)}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3 sm:p-3.5 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                 >
                   <option value="PDF">PDF Document</option>
                   <option value="DOCX">Word (.DOCX)</option>
@@ -394,25 +394,25 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                   placeholder="e.g. Markdown, Jupyter (.ipynb), TXT, Code"
                   value={manualFormat}
                   onChange={(e) => setManualFormat(e.target.value)}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3 sm:p-3.5 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                 />
               )}
             </div>
           </div>
 
           {/* SECTION 4: Recommended for Exam (with manual input option) */}
-          <div className="bg-[#F4F1EA]/80 border border-[#E5E4E2] rounded-2xl p-4 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="text-xs font-bold text-[#1b1c1c] flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#56615a]" />
+          <div className="bg-[#F4F1EA]/90 border-2 border-[#E5E4E2] rounded-3xl p-5 sm:p-6 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label className="text-sm sm:text-base font-black text-[#1b1c1c] flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#56615a]" />
                 Recommended for Exam (Timetable Integration) *
               </label>
-              <div className="flex items-center gap-1 bg-white border border-[#D8DCD6] p-0.5 rounded-lg text-xs">
+              <div className="flex items-center gap-1 bg-white border-2 border-[#D8DCD6] p-1 rounded-2xl text-xs sm:text-sm">
                 <button
                   type="button"
                   onClick={() => setExamMode('preset')}
-                  className={`px-2.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
-                    examMode === 'preset' ? 'bg-[#56615a] text-white' : 'text-[#737874]'
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer ${
+                    examMode === 'preset' ? 'bg-[#56615a] text-white shadow-xs' : 'text-[#56615a]'
                   }`}
                 >
                   Exam List
@@ -420,8 +420,8 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setExamMode('manual')}
-                  className={`px-2.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
-                    examMode === 'manual' ? 'bg-[#56615a] text-white' : 'text-[#737874]'
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer ${
+                    examMode === 'manual' ? 'bg-[#56615a] text-white shadow-xs' : 'text-[#56615a]'
                   }`}
                 >
                   ✍️ Write Manually
@@ -430,22 +430,22 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
             </div>
 
             {examMode === 'preset' ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {subjectExams.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {subjectExams.map((ex) => (
                       <button
                         key={ex.id}
                         type="button"
                         onClick={() => setRecommendedExam(ex.examType || 'IAT 1')}
-                        className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 border cursor-pointer ${
+                        className={`text-xs sm:text-sm px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 border-2 cursor-pointer ${
                           recommendedExam === ex.examType
                             ? 'bg-[#56615a] text-white border-[#56615a] shadow-xs'
-                            : 'bg-white text-[#434844] border-[#D8DCD6] hover:border-[#56615a]'
+                            : 'bg-white text-[#1b1c1c] border-[#D8DCD6] hover:border-[#56615a]'
                         }`}
                       >
                         <span>🎯 {ex.examType}</span>
-                        <span className="text-[10px] opacity-75">({ex.date})</span>
+                        <span className="text-xs opacity-80">({ex.date})</span>
                       </button>
                     ))}
                   </div>
@@ -465,7 +465,7 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                       setRecommendedExam(e.target.value);
                     }
                   }}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3.5 sm:p-4 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                 >
                   <option value="IAT 1">IAT 1 (Internal Assessment 1)</option>
                   <option value="IAT 2">IAT 2 (Internal Assessment 2)</option>
@@ -483,79 +483,81 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                   placeholder="Enter exam name manually (e.g. Unit Test 2, Quiz 4, Viva Voce)"
                   value={manualExamInput}
                   onChange={(e) => setManualExamInput(e.target.value)}
-                  className="paper-input w-full p-2.5 rounded-xl text-xs font-semibold text-[#1b1c1c] bg-white border border-[#D8DCD6]"
+                  className="paper-input w-full p-3.5 sm:p-4 rounded-2xl text-sm sm:text-base font-bold text-[#1b1c1c] bg-white border-2 border-[#D8DCD6]"
                 />
               </div>
             )}
           </div>
 
           {/* SECTION 5: Study Material Content: File Upload vs Manual Notes Writer */}
-          <div className="border border-[#E5E4E2] rounded-2xl overflow-hidden bg-white">
-            <div className="flex border-b border-[#E5E4E2] bg-[#F9F6EE]">
+          <div className="border-2 border-[#E5E4E2] rounded-3xl overflow-hidden bg-white">
+            <div className="flex border-b-2 border-[#E5E4E2] bg-[#F9F6EE]">
               <button
                 type="button"
                 onClick={() => setContentMode('file')}
-                className={`flex-1 py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                className={`flex-1 py-3.5 px-4 text-xs sm:text-sm font-black flex items-center justify-center gap-2.5 transition-colors cursor-pointer ${
                   contentMode === 'file'
                     ? 'bg-white text-[#1b1c1c] border-b-2 border-[#56615a]'
                     : 'text-[#737874] hover:text-[#1b1c1c]'
                 }`}
               >
-                <Upload className="w-3.5 h-3.5" />
+                <Upload className="w-4 h-4" />
                 <span>📁 Upload File Document</span>
               </button>
               <button
                 type="button"
                 onClick={() => setContentMode('manual-notes')}
-                className={`flex-1 py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                className={`flex-1 py-3.5 px-4 text-xs sm:text-sm font-black flex items-center justify-center gap-2.5 transition-colors cursor-pointer ${
                   contentMode === 'manual-notes'
                     ? 'bg-white text-[#1b1c1c] border-b-2 border-[#56615a]'
                     : 'text-[#737874] hover:text-[#1b1c1c]'
                 }`}
               >
-                <PenTool className="w-3.5 h-3.5" />
+                <PenTool className="w-4 h-4" />
                 <span>✍️ Write Notes Manually in Form</span>
               </button>
             </div>
 
-            <div className="p-4 sm:p-5">
+            <div className="p-5 sm:p-6">
               {contentMode === 'file' ? (
-                <div className="border-2 border-dashed border-[#C3C8C3] hover:border-[#56615a] rounded-xl p-6 text-center bg-[#FDFCF8] transition-colors relative cursor-pointer group">
+                <div className="border-2 border-dashed border-[#C3C8C3] hover:border-[#56615a] rounded-2xl p-8 text-center bg-[#FDFCF8] transition-colors relative cursor-pointer group">
                   <input
                     type="file"
                     onChange={handleFileChange}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-3xl text-[#56615a] group-hover:scale-110 transition-transform">
-                      cloud_upload
-                    </span>
-                    <div className="text-xs font-bold text-[#1b1c1c]">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-[#56615a]/10 flex items-center justify-center text-[#56615a] group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-3xl">
+                        cloud_upload
+                      </span>
+                    </div>
+                    <div className="text-sm sm:text-base font-extrabold text-[#1b1c1c]">
                       {uploadedFileName ? (
-                        <span className="text-[#56642b] flex items-center gap-1 font-bold">
-                          <CheckCircle2 className="w-4 h-4 inline" /> {uploadedFileName}
+                        <span className="text-[#56642b] flex items-center gap-1.5 font-black">
+                          <CheckCircle2 className="w-5 h-5 inline text-[#56642b]" /> {uploadedFileName}
                         </span>
                       ) : (
                         'Click to browse or drag & drop lecture file here'
                       )}
                     </div>
-                    <p className="text-[11px] text-[#737874]">Supports PDF, DOCX, PPTX, TXT, ZIP up to 25MB</p>
+                    <p className="text-xs text-[#737874]">Supports PDF, DOCX, PPTX, TXT, ZIP up to 25MB</p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-[#737874]">
-                    <span className="font-semibold">Type lecture notes, definitions, formulas, or markdown:</span>
-                    <span>{contentSnippet.length} characters</span>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between text-xs text-[#737874]">
+                    <span className="font-bold">Type lecture notes, definitions, formulas, or markdown:</span>
+                    <span className="font-mono">{contentSnippet.length} characters</span>
                   </div>
                   <textarea
-                    rows={6}
+                    rows={7}
                     placeholder={`# Chapter Summary & Formulas\n\n## 1. Key Principles\n- Principle A: Explanation and derivation\n- Principle B: Practical examples and problem steps\n\n## 2. Exam Tips & Important Questions\n- Q1: Explain in 5 marks...\n- Q2: Solve following problem...`}
                     value={contentSnippet}
                     onChange={(e) => setContentSnippet(e.target.value)}
-                    className="paper-input w-full p-3 rounded-xl text-xs font-mono text-[#1b1c1c] border border-[#D8DCD6] leading-relaxed"
+                    className="paper-input w-full p-4 rounded-2xl text-xs sm:text-sm font-mono text-[#1b1c1c] border-2 border-[#D8DCD6] leading-relaxed"
                   />
-                  <p className="text-[11px] text-[#56615a]">
+                  <p className="text-xs text-[#56615a] font-medium">
                     💡 Students can read and bookmark these notes directly inside the application's Document Reader.
                   </p>
                 </div>
@@ -564,9 +566,9 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
           </div>
 
           {/* SECTION 6: Unit / Module and Tags */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>
-              <label className="text-xs font-bold text-[#434844] block mb-1">
+              <label className="text-xs sm:text-sm font-black text-[#1b1c1c] block mb-1.5">
                 Unit / Module
               </label>
               <input
@@ -574,11 +576,11 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                 placeholder="e.g. Unit 3 & 4 (Trees, Graphs)"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                className="paper-input w-full p-2.5 rounded-xl text-xs font-medium text-[#1b1c1c] border border-[#D8DCD6]"
+                className="paper-input w-full p-3.5 rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] border-2 border-[#D8DCD6]"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#434844] block mb-1">
+              <label className="text-xs sm:text-sm font-black text-[#1b1c1c] block mb-1.5">
                 Tags (Comma separated)
               </label>
               <input
@@ -586,14 +588,14 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
                 placeholder="e.g. Midterm, Formulas, AVL Trees"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                className="paper-input w-full p-2.5 rounded-xl text-xs font-medium text-[#1b1c1c] border border-[#D8DCD6]"
+                className="paper-input w-full p-3.5 rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] border-2 border-[#D8DCD6]"
               />
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-xs font-bold text-[#434844] block mb-1">
+            <label className="text-xs sm:text-sm font-black text-[#1b1c1c] block mb-1.5">
               Description / Study Highlights
             </label>
             <textarea
@@ -601,25 +603,25 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
               placeholder="Brief summary of theorems, proofs, or questions contained..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="paper-input w-full p-2.5 rounded-xl text-xs font-medium text-[#1b1c1c] border border-[#D8DCD6]"
+              className="paper-input w-full p-3.5 rounded-2xl text-sm font-medium text-[#1b1c1c] border-2 border-[#D8DCD6]"
             />
           </div>
 
           {/* Bottom Action Buttons */}
-          <div className="pt-4 flex items-center justify-between border-t border-[#E5E4E2]">
+          <div className="pt-5 flex items-center justify-between border-t-2 border-[#F0EDED] mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-[#737874] hover:text-[#1b1c1c] hover:bg-[#F0EDED] rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-3 text-sm sm:text-base font-bold text-[#737874] hover:text-[#1b1c1c] hover:bg-[#F0EDED] rounded-2xl transition-colors cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
               <span>Back / Cancel</span>
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-[#56615a] hover:bg-[#434d46] text-white text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-md flex items-center gap-2 cursor-pointer"
+              className="px-7 py-3.5 bg-[#56615a] hover:bg-[#434d46] text-white text-sm sm:text-base font-black rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center gap-2.5 cursor-pointer active:scale-98"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-5 h-5" />
               <span>Save & Upload to Class Library</span>
             </button>
           </div>

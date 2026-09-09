@@ -104,36 +104,36 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
       <div 
         id="create-group-modal"
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-[#E5E4E2] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-[#FEFEFA] rounded-3xl shadow-2xl border-2 border-[#E5E4E2] overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E4E2] bg-[#F9F8F6]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#d9e6dc] text-[#344037] flex items-center justify-center">
-              <Users className="w-5 h-5 text-[#56615a]" />
+        <div className="flex items-center justify-between px-6 py-5 border-b-2 border-[#F0EDED] bg-[#F9F8F6]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-[#008069]/15 text-[#008069] flex items-center justify-center flex-shrink-0">
+              <Users className="w-6 h-6 text-[#008069]" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1b1c1c]">Create New Group</h3>
-              <p className="text-xs text-[#737874]">You will be designated as the Group Admin</p>
+              <h3 className="text-lg sm:text-xl font-black text-[#1b1c1c] leading-tight">Create New Group</h3>
+              <p className="text-xs sm:text-sm text-[#56615a] font-medium mt-0.5">You will be designated as the Group Admin</p>
             </div>
           </div>
           <button
             id="close-create-group-modal"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#737874] hover:bg-[#E5E4E2] transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-[#737874] hover:text-[#1b1c1c] hover:bg-[#E5E4E2] transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Group Picture & Name */}
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#56615a] shadow-xs flex-shrink-0 bg-[#F0EDED]">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="relative group flex-shrink-0">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#56615a] shadow-xs flex-shrink-0 bg-[#F0EDED]">
                 <img
                   src={customAvatarInput.trim() || avatar}
                   alt="Group icon"
@@ -143,8 +143,8 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-bold text-[#1b1c1c]">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs sm:text-sm font-bold text-[#1b1c1c]">
                 Group Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -154,15 +154,15 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 placeholder="e.g. Operating Systems Lab Squad"
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
-                className="w-full px-3.5 py-2 bg-[#F6F4F0] border border-[#E5E4E2] rounded-xl text-xs text-[#1b1c1c] focus:outline-none focus:border-[#56615a]"
+                className="w-full px-4 py-3 bg-[#F6F4F0] border-2 border-[#D8DCD6] rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] focus:outline-none focus:border-[#008069]"
               />
             </div>
           </div>
 
           {/* Avatar Presets Selection */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#1b1c1c]">Group Profile Picture</label>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="space-y-2">
+            <label className="text-xs sm:text-sm font-bold text-[#1b1c1c]">Group Profile Picture</label>
+            <div className="flex items-center gap-3 overflow-x-auto pb-2">
               {PRESET_AVATARS.map((p) => (
                 <button
                   type="button"
@@ -171,9 +171,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                     setAvatar(p.url);
                     setCustomAvatarInput('');
                   }}
-                  className={`relative p-0.5 rounded-full transition-all flex-shrink-0 ${
+                  className={`relative p-1 rounded-2xl transition-all flex-shrink-0 cursor-pointer ${
                     avatar === p.url && !customAvatarInput
-                      ? 'ring-2 ring-[#56615a] scale-105'
+                      ? 'ring-3 ring-[#008069] scale-105 shadow-sm'
                       : 'opacity-70 hover:opacity-100'
                   }`}
                   title={p.label}
@@ -181,12 +181,12 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                   <img
                     src={p.url}
                     alt={p.label}
-                    className="w-9 h-9 rounded-full object-cover"
+                    className="w-12 h-12 rounded-xl object-cover"
                     referrerPolicy="no-referrer"
                   />
                   {avatar === p.url && !customAvatarInput && (
-                    <span className="absolute -bottom-1 -right-1 bg-[#56615a] text-white rounded-full p-0.5 shadow-xs">
-                      <Check className="w-2.5 h-2.5" />
+                    <span className="absolute -bottom-1 -right-1 bg-[#008069] text-white rounded-full p-1 shadow-xs">
+                      <Check className="w-3 h-3 stroke-[3]" />
                     </span>
                   )}
                 </button>
@@ -195,28 +195,28 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           </div>
 
           {/* Description */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[#1b1c1c]">Group Description (Optional)</label>
+          <div className="space-y-1.5">
+            <label className="text-xs sm:text-sm font-bold text-[#1b1c1c]">Group Description (Optional)</label>
             <input
               id="group-description-input"
               type="text"
               placeholder="e.g. For coordinating lab practicals and homework solutions"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2 bg-[#F6F4F0] border border-[#E5E4E2] rounded-xl text-xs text-[#1b1c1c] focus:outline-none focus:border-[#56615a]"
+              className="w-full px-4 py-3 bg-[#F6F4F0] border-2 border-[#D8DCD6] rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] focus:outline-none focus:border-[#008069]"
             />
           </div>
 
           {/* Member Selection */}
-          <div className="space-y-2 pt-2 border-t border-[#E5E4E2]">
+          <div className="space-y-3 pt-3 border-t-2 border-[#F0EDED]">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[#1b1c1c]">
+              <label className="text-xs sm:text-sm font-black text-[#1b1c1c]">
                 Select Members ({selectedMemberIds.length} chosen)
               </label>
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-[11px] font-semibold text-[#56615a] hover:underline cursor-pointer"
+                className="text-xs sm:text-sm font-bold text-[#008069] hover:underline cursor-pointer"
               >
                 {selectedMemberIds.length === selectableMembers.length
                   ? 'Deselect All'
@@ -225,48 +225,52 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             </div>
 
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-[#737874] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-5 h-5 text-[#737874] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search classmates by name or roll number..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-[#F6F4F0] border border-[#E5E4E2] rounded-lg text-xs text-[#1b1c1c] focus:outline-none focus:border-[#56615a]"
+                className="w-full pl-11 pr-4 py-3 bg-[#F6F4F0] border-2 border-[#D8DCD6] rounded-2xl text-sm sm:text-base font-semibold text-[#1b1c1c] focus:outline-none focus:border-[#008069]"
               />
             </div>
 
-            <div className="max-h-44 overflow-y-auto space-y-1 border border-[#E5E4E2] rounded-xl p-2 bg-[#FAFAF8] divide-y divide-[#F0EDED]">
+            <div className="max-h-56 overflow-y-auto space-y-1.5 border-2 border-[#E5E4E2] rounded-2xl p-2.5 bg-[#FAFAF8]">
               {filteredMembers.map((m) => {
                 const isSelected = selectedMemberIds.includes(m.id);
                 return (
                   <div
                     key={m.id}
                     onClick={() => toggleMember(m.id)}
-                    className="pt-1.5 first:pt-0 flex items-center justify-between p-2 rounded-lg hover:bg-[#F0EDED] cursor-pointer transition-colors"
+                    className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border-2 ${
+                      isSelected
+                        ? 'bg-[#008069]/10 border-[#008069]/60 shadow-xs'
+                        : 'border-transparent hover:bg-[#F0EDED]'
+                    }`}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={m.avatar}
                         alt={m.name}
-                        className="w-8 h-8 rounded-full object-cover border border-[#E5E4E2]"
+                        className="w-11 h-11 rounded-2xl object-cover border-2 border-[#E5E4E2]"
                         referrerPolicy="no-referrer"
                       />
-                      <div>
-                        <div className="text-xs font-bold text-[#1b1c1c]">{m.name}</div>
-                        <div className="text-[10px] text-[#737874]">
-                          {m.rollNumber} • {m.role.replace('_', ' ')}
+                      <div className="min-w-0">
+                        <div className="text-sm sm:text-base font-black text-[#1b1c1c] truncate">{m.name}</div>
+                        <div className="text-xs sm:text-sm text-[#56615a] font-medium truncate">
+                          {m.rollNumber} &bull; {m.role.replace('_', ' ')}
                         </div>
                       </div>
                     </div>
 
                     <div
-                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                      className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
                         isSelected
-                          ? 'bg-[#56615a] border-[#56615a] text-white'
+                          ? 'bg-[#008069] border-[#008069] text-white'
                           : 'border-[#C3C8C3] bg-white'
                       }`}
                     >
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
                     </div>
                   </div>
                 );
@@ -275,11 +279,11 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           </div>
 
           {/* Footer Submit Button */}
-          <div className="pt-3 border-t border-[#E5E4E2] flex items-center justify-end gap-2.5">
+          <div className="pt-4 border-t-2 border-[#F0EDED] flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#434844] hover:bg-[#F0EDED] transition-colors cursor-pointer"
+              className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-[#737874] hover:text-[#1b1c1c] hover:bg-[#E5E4E2] transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -287,7 +291,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               id="confirm-create-group-btn"
               type="submit"
               disabled={!groupName.trim() || isSubmitting}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-[#56615a] hover:bg-[#434d46] text-white transition-colors disabled:opacity-40 cursor-pointer shadow-xs"
+              className="px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black bg-[#008069] hover:bg-[#006a57] text-white transition-all disabled:opacity-40 cursor-pointer shadow-md active:scale-98"
             >
               {isSubmitting ? 'Creating Group...' : 'Create Group'}
             </button>

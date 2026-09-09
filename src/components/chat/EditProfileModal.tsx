@@ -61,41 +61,46 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-3 sm:p-6 animate-in fade-in duration-200">
       <div 
         id="edit-profile-modal"
-        className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-[#E5E4E2] overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
+        className="w-full max-w-xl bg-[#FEFEFA] rounded-3xl shadow-2xl border-2 border-[#E5E4E2] overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]"
       >
-        {/* Header (WhatsApp green style) */}
-        <div className="px-6 py-4 bg-[#008069] text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserIcon className="w-5 h-5 text-white" />
-            <h2 className="text-base font-bold tracking-tight">Edit Profile</h2>
+        {/* Header */}
+        <div className="px-6 py-5 bg-[#008069] text-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center">
+              <UserIcon className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg sm:text-xl font-black tracking-tight">Edit Profile</h2>
+              <p className="text-xs text-white/80 font-medium">Update your display avatar and cohort nickname</p>
+            </div>
           </div>
           <button
             id="close-edit-profile-btn"
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-black/10 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-2xl hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer text-white"
             title="Close"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-6 h-6 text-white" />
           </button>
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-7 flex flex-col gap-6 overflow-y-auto">
           {/* Profile Picture Section */}
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-4">
             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               <img
                 src={avatar}
                 alt={name}
-                className="w-24 h-24 rounded-full object-cover border-3 border-[#008069]/20 shadow-md group-hover:opacity-90 transition-opacity"
+                className="w-28 h-28 rounded-3xl object-cover border-4 border-[#008069]/20 shadow-md group-hover:opacity-90 transition-opacity"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 rounded-full bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-6 h-6" />
-                <span className="text-[10px] font-semibold mt-0.5">CHANGE PHOTO</span>
+              <div className="absolute inset-0 rounded-3xl bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-8 h-8" />
+                <span className="text-xs font-black mt-1 tracking-wider">CHANGE PHOTO</span>
               </div>
             </div>
 
@@ -112,24 +117,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="button"
                 id="upload-profile-photo-btn"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#008069] bg-[#e7f5f2] hover:bg-[#d0ece6] rounded-full transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-[#008069] bg-[#008069]/10 hover:bg-[#008069]/20 rounded-2xl transition-colors cursor-pointer border-2 border-[#008069]/20"
               >
-                <Upload className="w-3.5 h-3.5" />
+                <Upload className="w-4 h-4" />
                 Upload New Photo
               </button>
             </div>
 
             {/* Presets */}
-            <div className="w-full mt-2">
-              <p className="text-[11px] font-medium text-[#737874] text-center mb-2">Or select from presets:</p>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="w-full mt-1">
+              <p className="text-xs sm:text-sm font-bold text-[#56615a] text-center mb-2.5">Or choose from preset avatars:</p>
+              <div className="flex items-center justify-center gap-2.5 flex-wrap">
                 {PRESET_AVATARS.map((presetUrl, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setAvatar(presetUrl)}
-                    className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
-                      avatar === presetUrl ? 'border-[#008069] scale-110 shadow-sm' : 'border-transparent opacity-75 hover:opacity-100'
+                    className={`w-12 h-12 rounded-2xl overflow-hidden border-3 transition-all cursor-pointer ${
+                      avatar === presetUrl ? 'border-[#008069] scale-110 shadow-md ring-2 ring-[#008069]/30' : 'border-transparent opacity-75 hover:opacity-100'
                     }`}
                   >
                     <img src={presetUrl} alt="Preset" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -140,9 +145,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </div>
 
           {/* Name Field */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="user-profile-name-input" className="text-xs font-bold text-[#434844]">
-              Your Name
+          <div className="flex flex-col gap-2">
+            <label htmlFor="user-profile-name-input" className="text-xs sm:text-sm font-black text-[#1b1c1c]">
+              Your Display Name <span className="text-red-500">*</span>
             </label>
             <input
               id="user-profile-name-input"
@@ -152,39 +157,39 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               placeholder="Enter your name"
               required
               maxLength={50}
-              className="w-full px-3.5 py-2.5 bg-[#F6F4F0] border border-[#E5E4E2] focus:border-[#008069] focus:bg-white rounded-xl text-sm text-[#1b1c1c] font-medium outline-none transition-colors"
+              className="w-full px-4 py-3 bg-[#F6F4F0] border-2 border-[#D8DCD6] focus:border-[#008069] focus:bg-white rounded-2xl text-sm sm:text-base text-[#1b1c1c] font-semibold outline-none transition-colors"
             />
-            <span className="text-[11px] text-[#737874]">
-              This is not your username or student ID. This name will appear on messages you send to your cohort and friends.
+            <span className="text-xs sm:text-sm text-[#56615a] font-medium leading-relaxed">
+              This name will appear on messages, study submissions, and notifications sent to your classmates.
             </span>
           </div>
 
           {/* Read-Only Info */}
-          <div className="p-3 bg-[#F6F4F0] rounded-xl text-xs text-[#56615a] flex flex-col gap-1 border border-[#E5E4E2]">
+          <div className="p-4 bg-[#F6F4F0] rounded-2xl text-xs sm:text-sm text-[#56615a] flex flex-col gap-2 border-2 border-[#E5E4E2]">
             <div className="flex justify-between">
-              <span className="text-[#737874]">Email:</span>
-              <span className="font-semibold text-[#1b1c1c]">{currentUser.email}</span>
+              <span className="text-[#737874] font-medium">Email:</span>
+              <span className="font-bold text-[#1b1c1c]">{currentUser.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#737874]">Role:</span>
-              <span className="font-semibold text-[#1b1c1c] capitalize">{currentUser.role.replace('_', ' ')}</span>
+              <span className="text-[#737874] font-medium">Role:</span>
+              <span className="font-bold text-[#1b1c1c] capitalize">{currentUser.role.replace('_', ' ')}</span>
             </div>
             {currentUser.rollNumber && (
               <div className="flex justify-between">
-                <span className="text-[#737874]">Student ID:</span>
-                <span className="font-semibold text-[#1b1c1c]">{currentUser.rollNumber}</span>
+                <span className="text-[#737874] font-medium">Student ID:</span>
+                <span className="font-bold text-[#1b1c1c]">{currentUser.rollNumber}</span>
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#E5E4E2]">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-[#F0EDED]">
             <button
               type="button"
               id="cancel-edit-profile-btn"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 text-xs font-semibold text-[#54656f] hover:bg-[#E5E4E2] rounded-xl transition-colors cursor-pointer"
+              className="px-5 py-3 text-xs sm:text-sm font-bold text-[#737874] hover:text-[#1b1c1c] hover:bg-[#E5E4E2] rounded-2xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -192,9 +197,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               type="submit"
               id="save-profile-btn"
               disabled={isSaving || !name.trim()}
-              className="px-5 py-2 text-xs font-bold text-white bg-[#008069] hover:bg-[#006e5a] rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-6 py-3.5 text-xs sm:text-sm font-black text-white bg-[#008069] hover:bg-[#006a57] rounded-2xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-98"
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-5 h-5 stroke-[3]" />
               {isSaving ? 'Saving...' : 'Save Profile'}
             </button>
           </div>

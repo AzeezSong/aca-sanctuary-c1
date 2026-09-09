@@ -74,10 +74,10 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
   const handleContextMenu = (e: React.MouseEvent, material: Material) => {
     e.preventDefault();
     e.stopPropagation();
-    const menuWidth = 210;
-    const menuHeight = 175;
-    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 12);
-    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 12);
+    const menuWidth = 300;
+    const menuHeight = 270;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 16);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 16);
     setContextMenu({ x, y, material });
   };
 
@@ -762,25 +762,25 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
             left: `${contextMenu.x}px`,
           }}
           onClick={(e) => e.stopPropagation()}
-          className="fixed z-50 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-[#E5E4E2] p-1.5 animate-in fade-in zoom-in-95 duration-150"
+          className="fixed z-50 w-72 sm:w-80 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E5E4E2] p-2.5 sm:p-3 animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header Info */}
-          <div className="px-3 py-2 border-b border-[#F0EDED] mb-1">
-            <p className="text-xs font-bold text-[#1b1c1c] truncate">
+          <div className="px-3 py-2.5 border-b-2 border-[#F0EDED] mb-2">
+            <p className="text-sm sm:text-base font-extrabold text-[#1b1c1c] truncate">
               {contextMenu.material.title}
             </p>
-            <div className="text-[10px] text-[#737874] flex items-center gap-1.5 mt-0.5">
-              <span className="font-semibold text-[#56615a]">
+            <div className="text-xs text-[#737874] flex items-center gap-2 mt-1 flex-wrap">
+              <span className="font-bold text-[#56615a] bg-[#d9e6dc] px-2 py-0.5 rounded-md">
                 {contextMenu.material.subjectCode}
               </span>
               <span>&bull;</span>
               <span>{contextMenu.material.fileSize}</span>
               <span>&bull;</span>
-              <span className="uppercase font-medium">{contextMenu.material.fileFormat}</span>
+              <span className="uppercase font-bold text-[#1b1c1c]">{contextMenu.material.fileFormat}</span>
             </div>
           </div>
 
-          <div className="space-y-0.5">
+          <div className="space-y-1.5">
             {/* Option 1: Download */}
             <button
               id="context-option-download"
@@ -788,14 +788,14 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
                 onDownloadMaterial(contextMenu.material);
                 setContextMenu(null);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-xl transition-colors text-left cursor-pointer group"
+              className="w-full flex items-center gap-3.5 p-3 text-sm sm:text-base font-bold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-2xl transition-colors text-left cursor-pointer group"
             >
-              <div className="w-7 h-7 rounded-lg bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors">
-                <Download className="w-3.5 h-3.5" />
+              <div className="w-10 h-10 rounded-xl bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors flex-shrink-0">
+                <Download className="w-5 h-5" />
               </div>
-              <div>
-                <span className="font-bold">Download</span>
-                <p className="text-[10px] text-[#737874] font-normal">Save file to device</p>
+              <div className="min-w-0 flex-1">
+                <span className="font-extrabold text-[#1b1c1c] block">Download File</span>
+                <p className="text-xs text-[#737874] font-medium mt-0.5">Save document directly to device</p>
               </div>
             </button>
 
@@ -806,14 +806,14 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
                 onPreviewMaterial(contextMenu.material);
                 setContextMenu(null);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-xl transition-colors text-left cursor-pointer group"
+              className="w-full flex items-center gap-3.5 p-3 text-sm sm:text-base font-bold text-[#1b1c1c] hover:bg-[#F6F4F0] rounded-2xl transition-colors text-left cursor-pointer group"
             >
-              <div className="w-7 h-7 rounded-lg bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors">
-                <Eye className="w-3.5 h-3.5" />
+              <div className="w-10 h-10 rounded-xl bg-[#F6F4F0] group-hover:bg-[#E5E4E2] flex items-center justify-center text-[#56615a] transition-colors flex-shrink-0">
+                <Eye className="w-5 h-5" />
               </div>
-              <div>
-                <span className="font-bold">View</span>
-                <p className="text-[10px] text-[#737874] font-normal">Read & preview in reader</p>
+              <div className="min-w-0 flex-1">
+                <span className="font-extrabold text-[#1b1c1c] block">Open & Preview</span>
+                <p className="text-xs text-[#737874] font-medium mt-0.5">Read study notes and syllabus</p>
               </div>
             </button>
 
@@ -824,15 +824,15 @@ export const NotesRepositoryView: React.FC<NotesRepositoryViewProps> = ({
                 onForwardMaterial(contextMenu.material);
                 setContextMenu(null);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#008069] hover:bg-[#008069]/10 rounded-xl transition-colors text-left cursor-pointer group"
+              className="w-full flex items-center gap-3.5 p-3 text-sm sm:text-base font-bold text-[#008069] hover:bg-[#008069]/10 rounded-2xl transition-colors text-left cursor-pointer group"
             >
-              <div className="w-7 h-7 rounded-lg bg-[#008069]/15 group-hover:bg-[#008069]/25 flex items-center justify-center text-[#008069] transition-colors">
-                <Forward className="w-3.5 h-3.5" />
+              <div className="w-10 h-10 rounded-xl bg-[#008069]/15 group-hover:bg-[#008069]/25 flex items-center justify-center text-[#008069] transition-colors flex-shrink-0">
+                <Forward className="w-5 h-5" />
               </div>
-              <div>
-                <span className="font-bold text-[#008069]">Forward</span>
-                <p className="text-[10px] text-[#008069]/80 font-normal">
-                  Share to multiple classmates or groups
+              <div className="min-w-0 flex-1">
+                <span className="font-extrabold text-[#008069] block">Forward to Chat</span>
+                <p className="text-xs text-[#008069]/80 font-medium mt-0.5">
+                  Share with classmates or groups
                 </p>
               </div>
             </button>

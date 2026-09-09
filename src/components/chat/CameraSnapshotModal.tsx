@@ -110,37 +110,42 @@ export const CameraSnapshotModal: React.FC<CameraSnapshotModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
       <div 
         id="camera-snapshot-modal"
-        className="w-full max-w-lg bg-[#1b1c1c] text-white rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-[#1b1c1c] text-white rounded-3xl shadow-2xl border-2 border-white/20 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-black/40">
-          <div className="flex items-center gap-2">
-            <Camera className="w-5 h-5 text-[#d9e6dc]" />
-            <h3 className="text-sm font-bold text-white">Camera Snapshot</h3>
+        <div className="flex items-center justify-between px-6 py-5 border-b-2 border-white/10 bg-black/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center">
+              <Camera className="w-6 h-6 text-[#d9e6dc]" />
+            </div>
+            <div>
+              <h3 className="text-lg sm:text-xl font-black text-white">Camera Snapshot</h3>
+              <p className="text-xs text-white/70 font-medium">Capture study notes or physical assignments to share</p>
+            </div>
           </div>
           <button
             id="close-camera-modal-btn"
             onClick={handleClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10 transition-colors"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Viewfinder Canvas */}
         <div className="relative aspect-4/3 w-full bg-black flex items-center justify-center overflow-hidden">
           {cameraError ? (
-            <div className="p-6 text-center text-red-300 max-w-xs flex flex-col items-center gap-3">
-              <AlertCircle className="w-10 h-10 text-red-400" />
-              <p className="text-xs">{cameraError}</p>
+            <div className="p-8 text-center text-red-300 max-w-md flex flex-col items-center gap-3">
+              <AlertCircle className="w-12 h-12 text-red-400" />
+              <p className="text-sm font-semibold">{cameraError}</p>
               <button
                 onClick={startCamera}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl mt-2 flex items-center gap-1.5 transition-colors"
+                className="px-5 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs sm:text-sm font-bold rounded-2xl mt-2 flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Try Again
+                <RefreshCw className="w-4 h-4" /> Try Again
               </button>
             </div>
           ) : capturedImage ? (
@@ -158,11 +163,11 @@ export const CameraSnapshotModal: React.FC<CameraSnapshotModalProps> = ({
                 muted
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 pointer-events-none border-2 border-white/20 m-4 rounded-xl flex items-center justify-center">
-                <div className="w-12 h-12 border-t-2 border-l-2 border-white/40 absolute top-2 left-2" />
-                <div className="w-12 h-12 border-t-2 border-r-2 border-white/40 absolute top-2 right-2" />
-                <div className="w-12 h-12 border-b-2 border-l-2 border-white/40 absolute bottom-2 left-2" />
-                <div className="w-12 h-12 border-b-2 border-r-2 border-white/40 absolute bottom-2 right-2" />
+              <div className="absolute inset-0 pointer-events-none border-2 border-white/20 m-6 rounded-2xl flex items-center justify-center">
+                <div className="w-14 h-14 border-t-4 border-l-4 border-white/60 absolute top-2 left-2 rounded-tl-lg" />
+                <div className="w-14 h-14 border-t-4 border-r-4 border-white/60 absolute top-2 right-2 rounded-tr-lg" />
+                <div className="w-14 h-14 border-b-4 border-l-4 border-white/60 absolute bottom-2 left-2 rounded-bl-lg" />
+                <div className="w-14 h-14 border-b-4 border-r-4 border-white/60 absolute bottom-2 right-2 rounded-br-lg" />
               </div>
             </>
           )}
@@ -171,44 +176,44 @@ export const CameraSnapshotModal: React.FC<CameraSnapshotModalProps> = ({
         </div>
 
         {/* Bottom Controls */}
-        <div className="p-4 bg-black/60 flex items-center justify-between">
+        <div className="p-5 bg-black/70 flex items-center justify-between border-t-2 border-white/10">
           {!capturedImage ? (
             <>
               <button
                 onClick={toggleFacingMode}
-                className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                className="p-3.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white transition-colors cursor-pointer"
                 title="Switch Camera"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-6 h-6" />
               </button>
 
               <button
                 id="take-snapshot-btn"
                 onClick={handleTakePhoto}
                 disabled={Boolean(cameraError)}
-                className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center bg-white/20 hover:bg-white/40 active:scale-95 transition-all cursor-pointer disabled:opacity-30"
+                className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-white/20 hover:bg-white/40 active:scale-95 transition-all cursor-pointer disabled:opacity-30 shadow-lg"
               >
-                <div className="w-12 h-12 rounded-full bg-white" />
+                <div className="w-14 h-14 rounded-full bg-white" />
               </button>
 
-              <div className="w-11" />
+              <div className="w-12" />
             </>
           ) : (
-            <div className="w-full flex items-center justify-between gap-3">
+            <div className="w-full flex items-center justify-between gap-4">
               <button
                 id="retake-snapshot-btn"
                 onClick={handleRetake}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-6 py-3.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Retake
+                <RefreshCw className="w-4 h-4" /> Retake Photo
               </button>
 
               <button
                 id="send-snapshot-btn"
                 onClick={handleSend}
-                className="px-5 py-2.5 rounded-xl bg-[#56615a] hover:bg-[#434d46] text-white text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-lg"
+                className="px-8 py-3.5 rounded-2xl bg-[#008069] hover:bg-[#006a57] text-white text-xs sm:text-sm font-black flex items-center gap-2.5 transition-all cursor-pointer shadow-lg active:scale-98"
               >
-                <Send className="w-3.5 h-3.5" /> Send Photo
+                <Send className="w-4 h-4" /> Send Photo
               </button>
             </div>
           )}
